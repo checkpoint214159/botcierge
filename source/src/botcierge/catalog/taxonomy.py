@@ -1,0 +1,65 @@
+"""Label vocabulary shared by the Django models and the ML pipeline.
+
+Codes must match ml/taxonomy.py at the repo root, because the joblib models
+predict these exact strings.
+"""
+
+TASK_CATEGORY_CHOICES = [
+    ("floor_cleaning", "Floor cleaning"),
+    ("window_cleaning", "Window & glass cleaning"),
+    ("lawn_care", "Lawn care"),
+    ("pool_cleaning", "Pool cleaning"),
+    ("tidying", "Tidying & decluttering"),
+    ("elder_care", "Elder companionship"),
+    ("event_serving", "Event serving"),
+    ("home_patrol", "Home patrol"),
+]
+
+PLATFORM_CHOICES = [
+    ("wheeled_amr", "Wheeled base"),
+    ("mobile_manipulator", "Mobile manipulator"),
+    ("quadruped", "Quadruped"),
+    ("humanoid", "Humanoid"),
+    ("lawn_robot", "Lawn robot"),
+    ("window_crawler", "Window crawler"),
+    ("pool_crawler", "Pool crawler"),
+    ("service_cart", "Service cart"),
+]
+
+ADDON_CHOICES = [
+    ("vacuum_module", "Vacuum module"),
+    ("mop_module", "Mop module"),
+    ("gripper", "Gripper"),
+    ("stair_kit", "Stair kit"),
+    ("outdoor_kit", "Outdoor weatherproofing kit"),
+    ("camera_mast", "Camera mast"),
+    ("tray_rack", "Tray rack"),
+    ("extra_battery", "Extra battery"),
+    ("pet_safe_bumper", "Pet-safe bumper"),
+    ("voice_interface", "Voice interface"),
+]
+
+SKILL_PACK_CHOICES = [
+    ("coverage_clean", "Coverage Clean"),
+    ("spot_clean", "Spot Clean"),
+    ("facade_crawl", "Facade Crawl"),
+    ("lawn_coverage", "Lawn Coverage"),
+    ("pool_coverage", "Pool Coverage"),
+    ("pick_and_place", "Pick & Place"),
+    ("declutter_sort", "Declutter & Sort"),
+    ("companion_monitor", "Companion Monitor"),
+    ("fetch_and_deliver", "Fetch & Deliver"),
+    ("serve_and_navigate", "Serve & Navigate"),
+    ("patrol_route", "Patrol Route"),
+]
+
+FLOOR_TYPE_CHOICES = [
+    ("tile", "Tile"),
+    ("wood", "Wood / parquet"),
+    ("carpet", "Carpet"),
+    ("mixed", "Mixed"),
+    ("grass", "Grass"),
+    ("concrete", "Concrete"),
+    ("glass", "Glass (windows)"),
+    ("water", "Water (pool)"),
+]
