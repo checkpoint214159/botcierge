@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="bc-card p-5 text-center">
+  <span class="badge bc-badge mb-3">Backlog {{ story }}</span>
+  <h1 class="h3">{{ title }}</h1>
+  <p class="text-muted mb-0">Not built yet. See <code>docs/user_stories.md</code> for story {{ story }}.</p>
+</div>
+{% endblock %}

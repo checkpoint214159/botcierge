@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Robots for your chores{% endblock %}
+{% block content %}
+<section class="bc-hero p-4 p-lg-5 mb-5">
+  <div class="row align-items-center g-4">
+    <div class="col-lg-7">
+      <p class="bc-eyebrow mb-2">Robots as a service, for homes and small shops</p>
+      <h1 class="bc-display mb-3">Tell us the chore.<br>We send the right robot.</h1>
+      <p class="lead text-muted mb-4">Describe the job in your own words, add your floor plan, budget and deadline. We work out the robot, the attachments and the skill it needs, then deliver and run it for you.</p>
+      <a href="{% url 'planner:start' %}" class="btn bc-btn btn-lg me-2">Plan a task</a>
+      <a href="{% url 'catalog:robot_list' %}" class="btn btn-outline-dark btn-lg">Browse robots</a>
+    </div>
+    <div class="col-lg-5">
+      <ol class="bc-steps list-unstyled mb-0">
+        <li><span>1</span><div><strong>Describe</strong><br><small class="text-muted">"Mop my 4-room flat before handover, we have a cat"</small></div></li>
+        <li><span>2</span><div><strong>We decompose</strong><br><small class="text-muted">Task type, effort, edge cases, robot, add-ons, skill pack</small></div></li>
+        <li><span>3</span><div><strong>Book and relax</strong><br><small class="text-muted">Delivered, set up, tracked until it's collected</small></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<h2 class="h4 mb-3">In the fleet</h2>
+<div class="row g-3">
+  {% for r in featured %}
+  <div class="col-sm-6 col-lg-3">
+    <a class="bc-card d-block p-3 h-100 text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
+      <span class="badge bc-badge mb-2">{{ r.get_platform_display }}</span>
+      <h3 class="h6 mb-1">{{ r.name }}</h3>
+      <p class="small text-muted mb-2">{{ r.tagline }}</p>
+      <span class="fw-semibold">S${{ r.daily_rate }}<small class="text-muted fw-normal"> / day</small></span>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

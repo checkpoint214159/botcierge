@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ robot.name }}{% endblock %}
+{% block content %}
+<a href="{% url 'catalog:robot_list' %}" class="small">&larr; All robots</a>
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <span class="badge bc-badge">{{ robot.get_platform_display }}</span>
+    <h1 class="h2 mt-2">{{ robot.name }}</h1>
+    <p class="text-muted">{{ robot.description }}</p>
+    <table class="table table-sm bc-specs">
+      <tr><th>Daily rate</th><td>S${{ robot.daily_rate }}</td></tr>
+      <tr><th>Environment</th><td>{% if robot.indoor %}Indoor{% endif %}{% if robot.indoor and robot.outdoor %} + {% endif %}{% if robot.outdoor %}Outdoor{% endif %}</td></tr>
+      <tr><th>Stairs</th><td>{{ robot.can_climb_stairs|yesno:"Yes,No (stair kit available for wheeled bases)" }}</td></tr>
+      <tr><th>Max payload</th><td>{{ robot.max_payload_kg }} kg</td></tr>
+      <tr><th>Battery</th><td>{{ robot.battery_hours }} h</td></tr>
+      <tr><th>Noise</th><td>{{ robot.noise_db }} dB</td></tr>
+      <tr><th>Units available</th><td>{{ robot.available_units }}</td></tr>
+    </table>
+  </div>
+  <div class="col-lg-5">
+    <div class="bc-card p-3 mb-3">
+      <h2 class="h6">Skill packs for this robot</h2>
+      <ul class="list-unstyled mb-0">{% for sp in skill_packs %}<li class="py-1"><strong>{{ sp.name }}</strong> <small class="text-muted">· {{ sp.summary }}</small></li>{% empty %}<li class="text-muted">None yet</li>{% endfor %}</ul>
+    </div>
+    <a href="{% url 'planner:start' %}" class="btn bc-btn w-100">Plan a task with this robot</a>
+  </div>
+</div>
+<h2 class="h5 mt-4">Reviews {% if stats.n %}<small class="text-muted">★ {{ stats.avg|floatformat:1 }} ({{ stats.n }})</small>{% endif %}</h2>
+{% for rv in reviews %}<div class="bc-card p-3 mb-2"><strong>★ {{ rv.rating }}</strong> · {{ rv.customer.first_name }}<p class="mb-0 small">{{ rv.comment }}</p></div>
+{% empty %}<p class="text-muted small">No reviews yet.</p>{% endfor %}
+{% endblock %}
