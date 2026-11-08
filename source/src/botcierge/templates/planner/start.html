@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Plan a task{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Plan a task</h1>
+<p class="text-muted mb-4">Tell us what needs doing. We turn it into a robot, attachments, a skill pack and a quote.</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <section class="bc-card p-4 mb-4">
+        <h2 class="bc-section">1 · The chore</h2>
+        {% include "partials/field.html" with field=form.title %}
+        {% include "partials/field.html" with field=form.description %}
+        {% include "partials/field.html" with field=form.category_hint %}
+      </section>
+      <section class="bc-card p-4">
+        <h2 class="bc-section">2 · The space</h2>
+        {% include "partials/field.html" with field=form.floor_plan %}
+        <div class="row">
+          <div class="col-md-6">{% include "partials/field.html" with field=form.housing_type %}</div>
+          <div class="col-md-6">{% include "partials/field.html" with field=form.floor_type %}</div>
+          <div class="col-md-4">{% include "partials/field.html" with field=form.area_m2 %}</div>
+          <div class="col-md-4">{% include "partials/field.html" with field=form.num_rooms %}</div>
+          <div class="col-md-4">{% include "partials/field.html" with field=form.payload_kg %}</div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            {% include "partials/field.html" with field=form.has_stairs %}
+            {% include "partials/field.html" with field=form.is_outdoor %}
+            {% include "partials/field.html" with field=form.fragile_items %}
+          </div>
+          <div class="col-md-6">
+            {% include "partials/field.html" with field=form.has_pets %}
+            {% include "partials/field.html" with field=form.has_children %}
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="col-lg-5">
+      <section class="bc-card p-4 bc-sticky">
+        <h2 class="bc-section">3 · Constraints</h2>
+        {% include "partials/field.html" with field=form.budget_sgd %}
+        <div class="row">
+          <div class="col-6">{% include "partials/field.html" with field=form.start_date %}</div>
+          <div class="col-6">{% include "partials/field.html" with field=form.deadline_date %}</div>
+          <div class="col-6">{% include "partials/field.html" with field=form.hours_per_day %}</div>
+          <div class="col-6">{% include "partials/field.html" with field=form.quiet_hours %}</div>
+        </div>
+        {% include "partials/field.html" with field=form.special_notes %}
+        <button class="btn bc-btn btn-lg w-100 mt-2">Get my plan</button>
+      </section>
+    </div>
+  </div>
+</form>
+{% endblock %}

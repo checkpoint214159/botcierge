@@ -1,0 +1,58 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Botcierge{% endblock %} · Botcierge</title>
+  <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<nav class="navbar navbar-expand-lg bc-nav">
+  <div class="container">
+    <a class="navbar-brand bc-brand" href="{% url 'catalog:home' %}">botcierge<span class="bc-dot">.</span></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'catalog:robot_list' %}">Robots</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'planner:start' %}">Plan a task</a></li>
+        {% if user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'planner:my_plans' %}">My plans</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'orders:order_list' %}">Orders</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'support:ticket_list' %}">Support</a></li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav">
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}<li class="nav-item"><a class="nav-link fw-semibold" href="{% url 'staffpanel:dashboard' %}">Staff panel</a></li>{% endif %}
+          <li class="nav-item"><span class="nav-link text-muted">Hi, {{ user.first_name|default:user.username }}</span></li>
+          <li class="nav-item">
+            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-link nav-link">Log out</button></form>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Log in</a></li>
+          <li class="nav-item"><a class="btn bc-btn ms-lg-2" href="{% url 'accounts:register' %}">Sign up</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="flex-grow-1">
+  <div class="container py-4">
+    {% for m in messages %}<div class="alert alert-{{ m.tags|default:'info' }}">{{ m }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<footer class="bc-footer py-4 mt-5">
+  <div class="container small d-flex justify-content-between">
+    <span>Botcierge · robots as a service for homes · IS2108 pair project</span>
+    <span>Fictional business, demo data only</span>
+  </div>
+</footer>
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
