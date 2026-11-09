@@ -22,3 +22,6 @@ Thumbs.db
 
 # Submission build output
 dist/
+
+# Course brief (lecturer's document, not ours to redistribute)
+*.pdf

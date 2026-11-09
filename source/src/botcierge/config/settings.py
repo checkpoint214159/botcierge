@@ -83,6 +83,12 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            # Take the write lock at BEGIN so concurrent requests (e.g. a double-submitted
+            # plan) queue up instead of failing with "database is locked".
+            "transaction_mode": "IMMEDIATE",
+            "timeout": 20,
+        },
     }
 }
 
