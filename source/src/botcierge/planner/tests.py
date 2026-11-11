@@ -9,7 +9,7 @@ from .decomposer import decompose
 from .models import TaskRequest
 
 
-class DecomposerTests(TestCase):
+class PlannerFixtureMixin:
     @classmethod
     def setUpTestData(cls):
         call_command("seed_demo", verbosity=0)
@@ -22,6 +22,9 @@ class DecomposerTests(TestCase):
                         hours_per_day=4)
         defaults.update(kw)
         return TaskRequest.objects.create(**defaults)
+
+
+class DecomposerTests(PlannerFixtureMixin, TestCase):
 
     def test_floor_cleaning_gets_wheeled_base_and_cleaning_pack(self):
         rec = decompose(self.make_request(has_pets=True))
@@ -70,3 +73,30 @@ class PlannerViewTests(TestCase):
     def test_staff_panel_blocks_customers(self):
         self.client.login(username="demo", password="demopass123")
         self.assertEqual(self.client.get(reverse("staffpanel:dashboard")).status_code, 302)
+
+
+class SwapTests(PlannerFixtureMixin, TestCase):
+    """S08 / S17: customer swaps are saved as new CUSTOMER recommendations."""
+
+    def test_swap_saves_customer_rec_and_requotes(self):
+        from .models import Recommendation
+        ml_rec = decompose(self.make_request())
+        from .forms import SwapForm
+        allowed = SwapForm(task_request=ml_rec.task_request).fields["robot"].queryset
+        other = allowed.exclude(pk=ml_rec.robot_model_id).first()
+        self.assertIsNotNone(other)
+        self.client.login(username="demo", password="demopass123")
+        url = reverse("planner:swap", args=[ml_rec.task_request.pk])
+        resp = self.client.post(url, {"robot": other.pk})
+        self.assertRedirects(resp, reverse("planner:result", args=[ml_rec.task_request.pk]))
+        newest = ml_rec.task_request.recommendations.first()
+        self.assertEqual(newest.source, Recommendation.Source.CUSTOMER)
+        self.assertEqual(newest.robot_model, other)
+        self.assertEqual(ml_rec.task_request.recommendations.count(), 2)
+
+    def test_result_page_shows_reasons(self):
+        rec = decompose(self.make_request())
+        self.client.login(username="demo", password="demopass123")
+        resp = self.client.get(reverse("planner:result", args=[rec.task_request.pk]))
+        self.assertContains(resp, "Why this setup")
+        self.assertNotContains(resp, "policy_conditioning")

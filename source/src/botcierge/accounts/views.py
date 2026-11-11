@@ -1,7 +1,10 @@
 from django.contrib.auth import login
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 
-from .forms import RegisterForm
+from .forms import ProfileForm, RegisterForm
+from .models import CustomerProfile
 
 
 def register(request):
@@ -16,4 +19,17 @@ def register(request):
         form = RegisterForm()
     return render(request, "accounts/register.html", {"form": form})
 
-# TODO(S01b): profile page where the customer edits phone, address, housing type.
+
+@login_required
+def profile(request):
+    """S01b: customer edits phone, address and housing type."""
+    obj, _ = CustomerProfile.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        form = ProfileForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated.")
+            return redirect("accounts:profile")
+    else:
+        form = ProfileForm(instance=obj)
+    return render(request, "accounts/profile.html", {"form": form})

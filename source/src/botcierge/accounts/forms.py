@@ -27,3 +27,11 @@ class RegisterForm(BootstrapFormMixin, UserCreationForm):
                 postal_code=self.cleaned_data.get("postal_code", ""),
             )
         return user
+
+
+class ProfileForm(BootstrapFormMixin, forms.ModelForm):
+    """S01b: edit contact and housing details."""
+
+    class Meta:
+        model = CustomerProfile
+        fields = ["phone", "address", "postal_code", "housing_type", "household_size"]
