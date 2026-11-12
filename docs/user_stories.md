@@ -42,7 +42,7 @@ One flow, three input stories, then the output stories. Together they form the M
 
 | ID | Story | Status | ML | Owner | Shot | Notes |
 |---|---|---|---|---|---|---|
-| S11 | As a customer, I want to track my booking from confirmed to collected so that I know when the robot arrives and finishes. | stub | | | | Timeline from `OrderStatusEvent`. Fed by staff story A07. |
+| S11 | As a customer, I want to track my booking from confirmed to collected so that I know when the robot arrives and finishes. | done | | | | `orders.order_detail`: step tracker plus update log from `OrderStatusEvent`. Fed by staff story A07. Links to review (S13) and support (S14) still to add. |
 | S12 | As a customer, I want to view my past orders and rebook so that repeat chores are one click. | stub | | | | |
 | S18 | As a customer, I want to cancel or reschedule a booking that hasn't started so that I can change my plans. | todo | | | | Release the reserved `FleetUnit`; write an `OrderStatusEvent`. Needs a cancellation rule (e.g. until the day before). |
 | S13 | As a customer, I want to rate and review a completed job so that others can choose well. | stub | | | | One review per completed order. |
@@ -58,7 +58,7 @@ Custom views under `/staff/`, gated by `staff_required` (`is_staff`). Django adm
 |---|---|---|---|---|---|---|
 | A02 | As an ops manager, I want a dashboard of bookings, revenue and fleet utilisation so that I can run the business. | stub | | | | |
 | A13 | As an ops manager, I want to see the recommendation acceptance rate so that I know whether the models are helping. | todo | ML monitoring | | | Acceptance = ML recs that reached checkout unmodified (`is_selected` and `source=ml`). Shown on the A02 dashboard. |
-| A07 | As staff, I want to assign a fleet unit to an order and advance its status so that the customer's tracking page updates. | stub | | | | Writes `OrderStatusEvent`. Pairs with S11. |
+| A07 | As staff, I want to assign a fleet unit to an order and advance its status so that the customer's tracking page updates. | done | | | | `staffpanel.order_list/order_detail`: assign a free unit, advance one step with an optional note (writes `OrderStatusEvent`); dispatch marks the unit deployed, collection frees it. Needs a unit assigned first. Pairs with S11. |
 | A09 | As support staff, I want a ticket queue with replies and status so that issues are resolved. | stub | | | | Urgent tickets first. |
 
 ### Epic: Manage the catalogue and fleet (A03 + A04 + A05)

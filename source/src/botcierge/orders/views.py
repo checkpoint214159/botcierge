@@ -12,7 +12,7 @@ from planner.models import Recommendation
 
 from .forms import CheckoutForm
 from .models import Order
-from .services import NoUnitFree, booking_window, check_promo, create_order, discount_for, free_units
+from .services import FLOW, NoUnitFree, booking_window, check_promo, create_order, discount_for, free_units
 
 CART_KEY = "cart_rec_id"
 
@@ -131,5 +131,12 @@ def order_list(request):
 
 @login_required
 def order_detail(request, pk):
-    # TODO(S11): status timeline from OrderStatusEvent, links to review (S13) and support (S14).
-    return _todo(request, "S11", f"Order #{pk}")
+    """S11: status timeline built from OrderStatusEvent."""
+    order = get_object_or_404(Order, pk=pk, customer=request.user)
+    steps = [(st, st.label) for st in FLOW]
+    reached = {e.status for e in order.events.all()}
+    return render(request, "orders/order_detail.html", {
+        "order": order, "items": order.items.all(), "events": order.events.all(),
+        "steps": [(label, st in reached) for st, label in steps],
+        "cancelled": order.status == Order.Status.CANCELLED,
+    })

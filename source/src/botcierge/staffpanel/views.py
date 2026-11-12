@@ -1,6 +1,10 @@
 """Custom staff panel (the brief bans django.contrib.admin). Backlog items A01-A12."""
 from django.contrib.auth.decorators import user_passes_test
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect, render
+
+from orders.models import Order
+from orders.services import advance_order, assignable_units, next_status
 
 staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url="accounts:login")
 
@@ -29,8 +33,41 @@ def fleet_list(request):
 
 @staff_required
 def order_list(request):
-    # TODO(A07): orders, assign FleetUnit, advance status (writes OrderStatusEvent).
-    return _todo(request, "A07", "Orders")
+    """A07: all orders, newest first, optionally filtered by status."""
+    status = request.GET.get("status", "")
+    orders = Order.objects.select_related("customer")
+    if status:
+        orders = orders.filter(status=status)
+    return render(request, "staffpanel/order_list.html", {
+        "orders": orders, "statuses": Order.Status.choices, "selected": status})
+
+
+@staff_required
+def order_detail(request, pk):
+    """A07: assign a fleet unit and advance the order; writes OrderStatusEvent for the customer's timeline."""
+    order = get_object_or_404(Order, pk=pk)
+    item, units = assignable_units(order)
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "assign":
+            unit = units.filter(pk=request.POST.get("unit")).first()
+            if unit is None:
+                messages.error(request, "That unit is not free for these dates.")
+            else:
+                item.fleet_unit = unit
+                item.save(update_fields=["fleet_unit"])
+                messages.success(request, f"Assigned {unit}.")
+        elif action == "advance":
+            if item.fleet_unit_id is None:
+                messages.error(request, "Assign a fleet unit before advancing the order.")
+            elif advance_order(order, request.user, request.POST.get("note", "").strip()):
+                messages.success(request, f"Order moved to {order.get_status_display()}.")
+        return redirect("staffpanel:order_detail", pk=order.pk)
+    nxt = next_status(order)
+    return render(request, "staffpanel/order_detail.html", {
+        "order": order, "item": item, "units": units, "items": order.items.all(),
+        "events": order.events.select_related("created_by"),
+        "next_label": Order.Status(nxt).label if nxt else None})
 
 
 @staff_required

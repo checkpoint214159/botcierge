@@ -95,3 +95,58 @@ class BookingTests(TestCase):
 
     def test_empty_cart_checkout_redirects(self):
         self.assertEqual(self.client.get(reverse("orders:checkout")).status_code, 302)
+
+
+class TrackingTests(BookingTests):
+    """S11 / A07: staff advance an order, the customer sees the timeline."""
+
+    def book(self):
+        self.add_to_cart()
+        self.pay()
+        return Order.objects.get()
+
+    def staff_client(self):
+        from django.test import Client
+        c = Client()
+        c.login(username="staff", password="staffpass123")
+        return c
+
+    def test_customer_sees_timeline_and_not_others(self):
+        order = self.book()
+        resp = self.client.get(reverse("orders:order_detail", args=[order.pk]))
+        self.assertContains(resp, "Tracking")
+        User.objects.create_user("o2", password="pw12345678")
+        self.client.login(username="o2", password="pw12345678")
+        self.assertEqual(self.client.get(reverse("orders:order_detail", args=[order.pk])).status_code, 404)
+
+    def test_staff_advance_updates_status_unit_and_timeline(self):
+        order = self.book()
+        staff = self.staff_client()
+        url = reverse("staffpanel:order_detail", args=[order.pk])
+        staff.post(url, {"action": "advance", "note": "On the way"})
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.DISPATCHED)
+        unit = order.items.get(kind="robot").fleet_unit
+        unit.refresh_from_db()
+        self.assertEqual(unit.status, FleetUnit.Status.DEPLOYED)
+        self.assertTrue(order.events.filter(status="dispatched", note="On the way").exists())
+        for _ in range(4):
+            staff.post(url, {"action": "advance"})
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.COLLECTED)
+        unit.refresh_from_db()
+        self.assertEqual(unit.status, FleetUnit.Status.AVAILABLE)
+
+    def test_staff_can_reassign_free_unit(self):
+        order = self.book()
+        item = order.items.get(kind="robot")
+        other = free_units(item.robot_model, order.start_date, order.end_date).first()
+        self.staff_client().post(reverse("staffpanel:order_detail", args=[order.pk]),
+                                 {"action": "assign", "unit": other.pk})
+        item.refresh_from_db()
+        self.assertEqual(item.fleet_unit, other)
+
+    def test_customers_cannot_use_staff_pages(self):
+        order = self.book()
+        resp = self.client.get(reverse("staffpanel:order_detail", args=[order.pk]))
+        self.assertEqual(resp.status_code, 302)

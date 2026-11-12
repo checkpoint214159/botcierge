@@ -98,3 +98,40 @@ def create_order(user, rec, address: str, promo, method: str = "card", reference
     tr.status = tr.Status.BOOKED
     tr.save(update_fields=["status"])
     return order
+
+
+# Forward-only lifecycle staff step through (A07); the customer sees it as a timeline (S11).
+FLOW = [Order.Status.CONFIRMED, Order.Status.DISPATCHED, Order.Status.ON_SITE,
+        Order.Status.RUNNING, Order.Status.COMPLETED, Order.Status.COLLECTED]
+
+
+def next_status(order):
+    if order.status in FLOW and order.status != FLOW[-1]:
+        return FLOW[FLOW.index(order.status) + 1]
+    return None
+
+
+def advance_order(order, user, note: str = ""):
+    """Move the order one step forward, log the timeline event and keep the unit's status in step."""
+    nxt = next_status(order)
+    if nxt is None:
+        return None
+    order.status = nxt
+    order.save(update_fields=["status"])
+    OrderStatusEvent.objects.create(order=order, status=nxt, note=note, created_by=user)
+    unit = order.items.filter(kind=OrderItem.Kind.ROBOT).values_list("fleet_unit", flat=True).first()
+    if unit:
+        new = {Order.Status.DISPATCHED: FleetUnit.Status.DEPLOYED,
+               Order.Status.COLLECTED: FleetUnit.Status.AVAILABLE}.get(nxt)
+        if new:
+            FleetUnit.objects.filter(pk=unit).update(status=new)
+    return nxt
+
+
+def assignable_units(order):
+    """Free units for this order's dates (plus the one it already holds) for the staff picker."""
+    item = order.items.get(kind=OrderItem.Kind.ROBOT)
+    qs = free_units(item.robot_model, order.start_date, order.end_date)
+    if item.fleet_unit_id:
+        qs = qs | FleetUnit.objects.filter(pk=item.fleet_unit_id)
+    return item, qs.distinct()
