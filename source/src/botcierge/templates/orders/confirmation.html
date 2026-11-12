@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Booking confirmed{% endblock %}
+{% block content %}
+<div class="bc-card p-4">
+  <span class="badge bc-badge mb-2">Order #{{ order.pk }}</span>
+  <h1 class="h3">Booking confirmed</h1>
+  <p class="text-muted">{{ order.start_date|date:"j M Y" }} to {{ order.end_date|date:"j M Y" }} · delivering to {{ order.delivery_address }}</p>
+  <table class="table table-sm small">
+    {% for i in items %}<tr><td>{{ i.description }}{% if i.kind == "robot" or i.kind == "addon" %} × {{ i.quantity }} day{{ i.quantity|pluralize }}{% endif %}</td><td class="text-end">S${{ i.line_total }}</td></tr>{% endfor %}
+    {% if order.discount %}<tr><td>Promo {{ order.promo_code.code }}</td><td class="text-end">-S${{ order.discount }}</td></tr>{% endif %}
+    <tr class="fw-bold"><td>Paid</td><td class="text-end">S${{ order.total }}</td></tr>
+  </table>
+  <a href="{% url 'orders:order_detail' order.pk %}" class="btn bc-btn">Track this booking</a>
+</div>
+{% endblock %}

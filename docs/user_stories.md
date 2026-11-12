@@ -35,8 +35,8 @@ One flow, three input stories, then the output stories. Together they form the M
 | ID | Story | Status | ML | Owner | Shot | Notes |
 |---|---|---|---|---|---|---|
 | S08 | As a customer, I want to swap the robot or attachments and see the quote update so that I stay in control. | done | | | | `planner.swap`. Saves a new `Recommendation(source=customer)` via `save_customer_edit`; the ML row is kept. This is the feedback signal for A08/A12 and retraining. Swaps respect the same hard constraints and add-on compatibility. |
-| S09 | As a customer, I want to add my plan to a booking cart and see if a unit is free on my dates so that I can book with confidence. | stub | | | | Session cart; check `FleetUnit` availability. |
-| S10 | As a customer, I want to check out with a promo code and pay so that my booking is confirmed. | stub | | | | Mock payment. Creates Order, OrderItems, Payment, first status event; reserves a unit. S09 and S10 may be built as one journey. |
+| S09 | As a customer, I want to add my plan to a booking cart and see if a unit is free on my dates so that I can book with confidence. | done | | | | Session cart (`orders.cart`) holds one `Recommendation` id. Availability is date-based (`orders.services.free_units`): units not in maintenance/retired and with no overlapping non-cancelled booking. |
+| S10 | As a customer, I want to check out with a promo code and pay so that my booking is confirmed. | done | | | | Done: `orders.checkout` + `services.create_order` (atomic) create Order, items, mock paid Payment, first `OrderStatusEvent`, assign and reserve a unit, set `Recommendation.is_selected` (feeds A13). Promo codes validated and applied as a percentage discount. |
 
 ### Epic: After booking (S11 <-> A07)
 

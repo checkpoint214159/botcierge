@@ -54,7 +54,7 @@
       </table>
       <p class="small {% if spec.within_budget %}text-success{% else %}text-danger{% endif %}">
         {% if spec.within_budget %}Within your S${{ tr.budget_sgd }} budget{% else %}Above your S${{ tr.budget_sgd }} budget{% endif %}</p>
-      <a href="{% url 'orders:cart' %}" class="btn bc-btn w-100 mb-2">Continue to booking</a>
+      <form method="post" action="{% url 'orders:cart_add' rec.pk %}">{% csrf_token %}<button class="btn bc-btn w-100 mb-2">Add to cart</button></form>
       <a href="{% url 'planner:swap' tr.pk %}" class="btn btn-outline-dark w-100">Change robot or attachments</a>
     </section>
   </div>
