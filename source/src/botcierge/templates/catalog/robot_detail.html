@@ -4,8 +4,15 @@
 <a href="{% url 'catalog:robot_list' %}" class="small">&larr; All robots</a>
 <div class="row g-4 mt-1">
   <div class="col-lg-7">
+    <figure class="mb-3">
+      {% include "partials/robot_photo.html" with robot=robot css="bc-hero-photo" %}
+      {% if robot.image_credit %}<figcaption class="bc-credit mt-1">
+        {% if robot.image_credit_url %}<a href="{{ robot.image_credit_url }}" target="_blank" rel="noopener">{{ robot.image_credit }}</a>{% else %}{{ robot.image_credit }}{% endif %}
+      </figcaption>{% endif %}
+    </figure>
     <span class="badge bc-badge">{{ robot.get_platform_display }}</span>
-    <h1 class="h2 mt-2">{{ robot.name }}</h1>
+    <p class="text-muted mt-2 mb-0">{{ robot.manufacturer }}</p>
+    <h1 class="h2">{{ robot.name }}</h1>
     <p class="text-muted">{{ robot.description }}</p>
     <table class="table table-sm bc-specs">
       <tr><th>Daily rate</th><td>S${{ robot.daily_rate }}</td></tr>

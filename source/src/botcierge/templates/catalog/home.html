@@ -24,11 +24,14 @@
 <div class="row g-3">
   {% for r in featured %}
   <div class="col-sm-6 col-lg-3">
-    <a class="bc-card d-block p-3 h-100 text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
-      <span class="badge bc-badge mb-2">{{ r.get_platform_display }}</span>
-      <h3 class="h6 mb-1">{{ r.name }}</h3>
-      <p class="small text-muted mb-2">{{ r.tagline }}</p>
-      <span class="fw-semibold">S${{ r.daily_rate }}<small class="text-muted fw-normal"> / day</small></span>
+    <a class="bc-card d-block h-100 overflow-hidden text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
+      {% include "partials/robot_photo.html" with robot=r css="bc-thumb" %}
+      <div class="p-3">
+        <span class="badge bc-badge mb-2">{{ r.get_platform_display }}</span>
+        <h3 class="h6 mb-1">{{ r.manufacturer }} {{ r.name }}</h3>
+        <p class="small text-muted mb-2">{{ r.tagline }}</p>
+        <span class="fw-semibold">S${{ r.daily_rate }}<small class="text-muted fw-normal"> / day</small></span>
+      </div>
     </a>
   </div>
   {% endfor %}

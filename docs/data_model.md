@@ -22,7 +22,7 @@ User 1─* SupportTicket *─1 Order (optional)
 | App | Model | Purpose |
 |---|---|---|
 | accounts | CustomerProfile | Housing type, contact, address |
-| catalog | RobotModel | Catalogue entry, daily rate, capabilities |
+| catalog | RobotModel | Catalogue entry for a real product: manufacturer, daily rate, capabilities, photo (staff upload or seeded static photo) with credit |
 | catalog | FleetUnit | Physical unit = inventory (available / reserved / deployed / maintenance / retired) |
 | catalog | AddOn | Attachment with daily rate and platform compatibility |
 | catalog | SkillPack | Robot policy as a product; `default_conditioning` JSON |

@@ -61,7 +61,7 @@ class PlannerViewTests(TestCase):
         tr = TaskRequest.objects.get()
         self.assertRedirects(resp, reverse("planner:result", args=[tr.pk]))
         page = self.client.get(reverse("planner:result", args=[tr.pk]))
-        self.assertContains(page, "Clearview W1")
+        self.assertContains(page, "Winbot W930")
 
     def test_planner_requires_login(self):
         resp = self.client.get(reverse("planner:start"))

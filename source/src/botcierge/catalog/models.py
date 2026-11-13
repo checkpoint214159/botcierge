@@ -1,4 +1,5 @@
 from django.db import models
+from django.templatetags.static import static
 
 from .taxonomy import ADDON_CHOICES, PLATFORM_CHOICES, SKILL_PACK_CHOICES
 
@@ -12,7 +13,11 @@ class RobotModel(models.Model):
     manufacturer = models.CharField(max_length=100, blank=True)
     tagline = models.CharField(max_length=160, blank=True)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to="robots/", blank=True)
+    image = models.ImageField(upload_to="robots/", blank=True, help_text="Uploaded by staff; overrides stock_image")
+    stock_image = models.CharField(max_length=200, blank=True,
+                                   help_text="Path under static/, e.g. img/robots/spot.jpg (seeded photos)")
+    image_credit = models.CharField(max_length=255, blank=True, help_text="Photographer and licence, shown under the photo")
+    image_credit_url = models.URLField(blank=True)
     daily_rate = models.DecimalField(max_digits=8, decimal_places=2, help_text="SGD per robot-day")
     indoor = models.BooleanField(default=True)
     outdoor = models.BooleanField(default=False)
@@ -28,6 +33,15 @@ class RobotModel(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def image_url(self) -> str:
+        """Staff upload if there is one, else the seeded static photo, else empty (template shows a placeholder)."""
+        if self.image:
+            return self.image.url
+        if self.stock_image:
+            return static(self.stock_image)
+        return ""
 
     @property
     def available_units(self):

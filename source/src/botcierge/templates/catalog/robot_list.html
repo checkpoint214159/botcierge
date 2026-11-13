@@ -16,10 +16,13 @@
 <div class="row g-3">
   {% for r in robots %}
   <div class="col-md-6 col-lg-4">
-    <a class="bc-card d-block p-3 h-100 text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
+    <a class="bc-card d-block h-100 overflow-hidden text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
+      {% include "partials/robot_photo.html" with robot=r css="bc-thumb" %}
+      <div class="p-3">
       <div class="d-flex justify-content-between"><span class="badge bc-badge">{{ r.get_platform_display }}</span>
         {% if r.avg_rating %}<small>★ {{ r.avg_rating|floatformat:1 }}</small>{% endif %}</div>
-      <h2 class="h5 mt-2 mb-1">{{ r.name }}</h2>
+      <p class="small text-muted mt-2 mb-0">{{ r.manufacturer }}</p>
+      <h2 class="h5 mb-1">{{ r.name }}</h2>
       <p class="small text-muted">{{ r.tagline }}</p>
       <div class="small d-flex gap-3 text-muted">
         <span>{% if r.outdoor %}Indoor + outdoor{% else %}Indoor{% endif %}</span>
@@ -27,6 +30,7 @@
         <span>{{ r.noise_db }} dB</span>
       </div>
       <div class="mt-2 fw-semibold">S${{ r.daily_rate }}<small class="text-muted fw-normal"> / day</small></div>
+      </div>
     </a>
   </div>
   {% empty %}<p class="text-muted">No robots match these filters.</p>{% endfor %}

@@ -29,8 +29,13 @@
     <section class="bc-card bc-rec p-4">
       <h2 class="bc-section">Recommended setup</h2>
       {% if rec.robot_model %}
-      <a href="{% url 'catalog:robot_detail' rec.robot_model.slug %}" class="h5 d-block mb-0">{{ rec.robot_model.name }}</a>
-      <small class="text-muted">{{ rec.robot_model.get_platform_display }} · {% widthratio rec.platform_confidence 1 100 %}% match</small>
+      <div class="d-flex gap-3 align-items-center">
+        {% include "partials/robot_photo.html" with robot=rec.robot_model css="bc-mini-photo" %}
+        <div>
+          <a href="{% url 'catalog:robot_detail' rec.robot_model.slug %}" class="h5 d-block mb-0">{{ rec.robot_model.manufacturer }} {{ rec.robot_model.name }}</a>
+          <small class="text-muted">{{ rec.robot_model.get_platform_display }} · {% widthratio rec.platform_confidence 1 100 %}% match</small>
+        </div>
+      </div>
       {% else %}<p class="text-danger">No robot in the fleet fits every constraint yet.</p>{% endif %}
 
       <div class="mt-3"><div class="bc-k">Attachments</div>
