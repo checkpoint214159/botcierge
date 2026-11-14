@@ -1,8 +1,9 @@
-"""Orders: booking page, cart, checkout, tracking. S08-S11 built; S12 (history) still to do.
+"""Orders: booking page, cart, checkout, tracking and history (S08-S12).
 
 Flow: plan (planner.result) -> booking page (S08 adjust setup + S09 dates, address, floor plan,
 availability) -> cart (all plans not yet paid for, ready ones first) -> checkout (S10) -> order (S11).
 """
+import json
 import uuid
 
 from django.contrib import messages
@@ -15,15 +16,12 @@ from django.views.decorators.http import require_POST
 from planner.decomposer import requote
 from planner.models import TaskRequest
 from planner.pricing import rec_quote_lines
+from planner.views import describe_tuning, total_label
 
 from .forms import BookingForm, CheckoutForm
 from .models import Order, PromoCode
-from .services import (FLOW, NoUnitFree, booking_problems, booking_window, check_promo, create_order,
-                       discount_for, preview_booking, save_booking)
-
-
-def _todo(request, story, title):
-    return render(request, "coming_soon.html", {"story": story, "title": title})
+from .services import (FLOW, ONGOING, NoUnitFree, booking_problems, booking_window, check_promo, create_order,
+                       discount_for, order_summary, preview_booking, rebook, save_booking)
 
 
 def _open_plan(request, pk):
@@ -63,7 +61,8 @@ def booking(request, pk):
     else:
         form = BookingForm(task_request=tr, initial={
             "robot": rec.robot_model, "addons": rec.addons.all(), "skill_pack": rec.skill_pack,
-            "start_date": tr.start_date, "address": tr.address})
+            "start_date": tr.start_date, "address": tr.address,
+            "keep_out_zones": json.dumps(tr.keep_out_zones)})
 
     # data-* attributes let the page grey out attachments / skill packs that don't fit the chosen robot
     robots = list(form.fields["robot"].queryset)
@@ -184,6 +183,7 @@ def checkout(request, pk):
     start, end = booking_window(rec)
     return render(request, "orders/checkout.html", {
         "form": form, "tr": tr, "rec": rec, "lines": rec_quote_lines(rec), "start": start, "end": end,
+        "tuning": describe_tuning(tr, tr.spec),
         "subtotal": subtotal, "discount": discount, "total": subtotal - discount,
         "promo": promo, "promo_error": promo_error, "promo_entered": code or "",
         "available_promos": PromoCode.objects.filter(is_active=True),
@@ -193,15 +193,41 @@ def checkout(request, pk):
 @login_required
 def confirmation(request, pk):
     order = get_object_or_404(Order, pk=pk, customer=request.user)
-    return render(request, "orders/confirmation.html", {"order": order, "items": order.items.all()})
+    return render(request, "orders/confirmation.html", {"order": order, "summary": order_summary(order)})
 
 
 # ---------------------------------------------------------------- after booking (S11, S12)
 
+def _with_progress(order):
+    """Attach the robot (for the photo) and 'step x of y' so the list can show where an order is."""
+    item = next((i for i in order.items.all() if i.kind == i.Kind.ROBOT), None)
+    order.robot = item.robot_model if item else None
+    order.step = FLOW.index(order.status) + 1 if order.status in FLOW else None
+    order.steps_total = len(FLOW)
+    return order
+
+
 @login_required
 def order_list(request):
-    # TODO(S12): customer's order history with rebook button.
-    return _todo(request, "S12", "My orders")
+    """S12: ongoing orders first, finished ones below with a rebook button."""
+    orders = [_with_progress(o) for o in Order.objects.filter(customer=request.user)
+              .prefetch_related("items__robot_model").order_by("start_date")]
+    ongoing = [o for o in orders if o.status in ONGOING]
+    past = sorted((o for o in orders if o.status not in ONGOING), key=lambda o: o.start_date, reverse=True)
+    return render(request, "orders/order_list.html", {"ongoing": ongoing, "past": past})
+
+
+@login_required
+@require_POST
+def order_rebook(request, pk):
+    """S12: copy a past order's plan into the cart with new dates, then finish it on the booking page."""
+    order = get_object_or_404(Order, pk=pk, customer=request.user)
+    tr = rebook(order)
+    if tr is None:
+        messages.error(request, "We can't rebook this one because its plan was deleted. Start a new plan instead.")
+        return redirect("orders:order_list")
+    messages.success(request, "Copied into your cart. Check the dates and details, then check out.")
+    return redirect("orders:booking", pk=tr.pk)
 
 
 @login_required
@@ -211,7 +237,8 @@ def order_detail(request, pk):
     steps = [(st, st.label) for st in FLOW]
     reached = {e.status for e in order.events.all()}
     return render(request, "orders/order_detail.html", {
-        "order": order, "items": order.items.all(), "events": order.events.all(),
+        "order": order, "summary": order_summary(order), "events": order.events.all(),
         "steps": [(label, st in reached) for st, label in steps],
         "cancelled": order.status == Order.Status.CANCELLED,
+        "ongoing": order.status in ONGOING,
     })

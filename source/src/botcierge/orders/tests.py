@@ -24,8 +24,8 @@ def tiny_png():
     return SimpleUploadedFile("plan.png", buf.getvalue(), content_type="image/png")
 
 
-class BookingTests(TestCase):
-    """S08/S09/S10: booking page, cart and checkout."""
+class BookingFixture(TestCase):
+    """Seeded catalogue, the demo customer and one fresh plan, plus helpers to book it."""
 
     @classmethod
     def setUpTestData(cls):
@@ -64,6 +64,11 @@ class BookingTests(TestCase):
     def pay(self, promo="", tr=None):
         return self.client.post(reverse("orders:checkout", args=[(tr or self.tr).pk]), {
             "promo_code": promo, "card_name": "A Tester", "card_number": "4242 4242 4242 4242"})
+
+
+
+class BookingTests(BookingFixture):
+    """S08/S09/S10: booking page, cart and checkout."""
 
     # ---- cart
 
@@ -241,7 +246,59 @@ class BookingTests(TestCase):
                              reverse("orders:booking", args=[self.tr.pk]))
 
 
-class TrackingTests(BookingTests):
+class HistoryAndZonesTests(BookingFixture):
+    """S12 order history + rebook, and the floor plan keep-out zones."""
+
+    def book(self):
+        self.complete()
+        self.pay()
+        return Order.objects.latest("pk")
+
+    def test_order_list_splits_ongoing_and_finished(self):
+        order = self.book()
+        resp = self.client.get(reverse("orders:order_list"))
+        self.assertEqual(resp.context["ongoing"], [order])
+        Order.objects.filter(pk=order.pk).update(status=Order.Status.COLLECTED)
+        resp = self.client.get(reverse("orders:order_list"))
+        self.assertEqual(resp.context["past"], [Order.objects.get(pk=order.pk)])
+        self.assertContains(resp, "Book again")
+
+    def test_rebook_copies_plan_into_cart_with_new_dates(self):
+        order = self.book()
+        resp = self.client.post(reverse("orders:order_rebook", args=[order.pk]))
+        new = TaskRequest.objects.filter(customer=self.user).latest("pk")
+        self.assertRedirects(resp, reverse("orders:booking", args=[new.pk]))
+        self.assertNotEqual(new.pk, self.tr.pk)
+        self.assertEqual(new.status, TaskRequest.Status.PLANNED)
+        self.assertGreater(new.start_date, date.today())
+        self.assertEqual(new.recommendations.first().robot_model, self.rec.robot_model)
+        self.assertEqual(new.spec.task_category, self.tr.spec.task_category)
+
+    def test_cannot_rebook_someone_elses_order(self):
+        order = self.book()
+        User.objects.create_user("o3", password="pw12345678")
+        self.client.login(username="o3", password="pw12345678")
+        self.assertEqual(self.client.post(reverse("orders:order_rebook", args=[order.pk])).status_code, 404)
+
+    def test_keep_out_zones_saved_and_sent_to_robot_config(self):
+        import json
+        zones = [{"x": 0.1, "y": 0.2, "w": 0.3, "h": 0.25}]
+        self.client.post(reverse("orders:booking", args=[self.tr.pk]),
+                         {**self.booking_data(), "floor_plan": tiny_png(), "keep_out_zones": json.dumps(zones)})
+        self.tr.refresh_from_db()
+        self.assertEqual(self.tr.keep_out_zones, zones)
+        self.assertEqual(self.tr.recommendations.first().policy_conditioning["map"]["keep_out_zones"], zones)
+
+    def test_bad_keep_out_zones_are_rejected(self):
+        import json
+        for bad in ["not json", json.dumps([{"x": 0.9, "y": 0.1, "w": 0.5, "h": 0.1}]), json.dumps([{"x": 1}])]:
+            resp = self.client.post(reverse("orders:booking", args=[self.tr.pk]), self.booking_data(keep_out_zones=bad))
+            self.assertEqual(resp.status_code, 200, bad)  # re-rendered with an error, not saved
+        self.tr.refresh_from_db()
+        self.assertEqual(self.tr.keep_out_zones, [])
+
+
+class TrackingTests(BookingFixture):
     """S11 / A07: staff advance an order, the customer sees the timeline."""
 
     def book(self):

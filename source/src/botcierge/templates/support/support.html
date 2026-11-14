@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Support{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Support</h1>
+<p class="text-muted mb-4">Pick the booking you need help with. Each booking has one ticket: save it as a draft, then submit it when it's ready.</p>
+
+{% if not orders %}
+<div class="bc-card p-4 text-center">
+  <p class="text-muted mb-2">You haven't booked anything yet, so there's nothing to raise a ticket on.</p>
+  <p class="small text-muted mb-0">General questions? Email <a href="mailto:help@botcierge.example">help@botcierge.example</a>.</p>
+</div>
+{% else %}
+
+{# Choosing an order is just navigation (GET), so it can't change anything. #}
+<form method="get" class="bc-card p-3 mb-4">
+  <label class="form-label small mb-1" for="order-picker">Booking</label>
+  <select class="form-select" id="order-picker" name="order" onchange="this.form.submit()">
+    <option value="">Choose a booking…</option>
+    {% for o in orders %}
+    <option value="{{ o.pk }}" {% if order and o.pk == order.pk %}selected{% endif %}>
+      Order #{{ o.pk }} · {{ o.start_date|date:"j M Y" }} · {{ o.get_status_display }}{% if o.ticket %} · {% if o.ticket.is_draft %}&#9998; draft saved{% else %}&#10003; ticket sent{% endif %}{% endif %}
+    </option>
+    {% endfor %}
+  </select>
+  <noscript><button class="btn bc-btn-outline btn-sm mt-2">Show</button></noscript>
+  <div class="small text-muted mt-2">&#9998; draft saved (not sent yet) · &#10003; ticket sent</div>
+</form>
+
+{% if order %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <section class="bc-card p-4">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <h2 class="bc-section">Order #{{ order.pk }}</h2>
+        <a href="{% url 'orders:order_detail' order.pk %}" class="small">View order</a>
+      </div>
+      <p class="small text-muted">{{ order.start_date|date:"j M Y" }} to {{ order.end_date|date:"j M Y" }} · {{ order.get_status_display }}<br>{{ order.delivery_address }}</p>
+      {% include "partials/setup_summary.html" with robot=summary.robot addons=summary.addons skill_pack=summary.skill_pack lines=summary.lines total=summary.total total_label="Paid" discount=summary.discount promo_code=summary.promo_code %}
+    </section>
+  </div>
+
+  <div class="col-lg-7">
+    <section class="bc-card p-4">
+      {% if form %}
+        <h2 class="bc-section">{% if ticket %}Your draft{% else %}New ticket{% endif %}</h2>
+        {% if order.status == "on_site" or order.status == "running" %}
+        <div class="alert alert-warning small">The robot is with you right now, so this ticket will be marked urgent.</div>
+        {% endif %}
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="order" value="{{ order.pk }}">
+          {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+          <div class="d-flex gap-2">
+            <button class="btn bc-btn-outline" name="action" value="draft">Save draft</button>
+            <button class="btn bc-btn flex-grow-1" name="action" value="submit">Submit ticket</button>
+          </div>
+          <p class="small text-muted mt-2 mb-0">Drafts aren't sent to us. Once submitted, the ticket can't be edited here.</p>
+        </form>
+      {% else %}
+        <div class="d-flex justify-content-between align-items-baseline">
+          <h2 class="bc-section">Ticket #{{ ticket.pk }}</h2>
+          <span class="badge bc-badge">{{ ticket.get_status_display }}</span>
+        </div>
+        {% if ticket.priority == "urgent" %}<p class="small text-danger mb-2">Marked urgent: the robot was on site when you wrote in.</p>{% endif %}
+        <p class="small text-muted mb-1">{{ ticket.get_category_display }} · sent {{ ticket.submitted_at|date:"j M Y, H:i" }}</p>
+        <h3 class="h6">{{ ticket.subject }}</h3>
+        <p class="small" style="white-space: pre-line">{{ ticket.description }}</p>
+
+        <h3 class="h6 mt-4">Replies</h3>
+        {% for m in replies %}
+        <div class="border-start ps-3 mb-2 small">
+          <strong>{% if m.author.is_staff %}Botcierge support{% else %}You{% endif %}</strong>
+          <span class="text-muted">· {{ m.created_at|date:"j M, H:i" }}</span>
+          <div style="white-space: pre-line">{{ m.body }}</div>
+        </div>
+        {% empty %}<p class="small text-muted">No replies yet. We usually answer within a working day.</p>{% endfor %}
+        <p class="small text-muted mt-3 mb-0">Need to add something? Email <a href="mailto:help@botcierge.example?subject=Ticket%20%23{{ ticket.pk }}">help@botcierge.example</a> quoting ticket #{{ ticket.pk }}.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

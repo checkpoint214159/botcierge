@@ -6,8 +6,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from catalog.models import FleetUnit
-from planner.decomposer import requote, save_customer_edit
-from planner.models import TaskRequest
+from planner.decomposer import refresh_conditioning, requote, save_customer_edit
+from planner.models import Recommendation, TaskRequest, TaskSpec
 from planner.pricing import build_quote, quote_lines
 
 from .models import Order, OrderItem, OrderStatusEvent, Payment, PromoCode
@@ -104,6 +104,7 @@ def save_booking(tr, rec, data) -> tuple:
     tr.start_date += shift
     tr.deadline_date += shift  # keep the same window length
     tr.address = data["address"]
+    tr.keep_out_zones = data.get("keep_out_zones") or []
     if data.get("floor_plan"):
         tr.floor_plan = data["floor_plan"]
     tr.status = TaskRequest.Status.PLANNED  # saving puts a removed plan back in the cart
@@ -113,8 +114,11 @@ def save_booking(tr, rec, data) -> tuple:
     setup_changed = (robot != rec.robot_model or skill_pack != rec.skill_pack
                      or {a.pk for a in addons} != set(rec.addons.values_list("pk", flat=True)))
     if setup_changed:
-        return save_customer_edit(rec, robot, addons, skill_pack), True
-    return requote(rec), False
+        rec = save_customer_edit(rec, robot, addons, skill_pack)
+    else:
+        rec = requote(rec)
+    # dates, floor plan and keep-out zones feed the robot's config, so rebuild it either way
+    return refresh_conditioning(rec), setup_changed
 
 
 class NoUnitFree(Exception):
@@ -170,9 +174,45 @@ def create_order(user, rec, address: str, promo, method: str = "card", reference
     return order
 
 
+@transaction.atomic
+def rebook(order):
+    """S12: copy the plan behind a past order (task, spec and the setup that was booked) into a
+    fresh PLANNED plan starting in 3 days. Returns the new TaskRequest, or None if the plan is gone."""
+    rec = order.recommendation
+    if rec is None:
+        return None
+    old = rec.task_request
+    spec = TaskSpec.objects.get(task_request=old)
+    length = old.deadline_date - old.start_date
+
+    tr = TaskRequest.objects.get(pk=old.pk)
+    tr.pk = None  # saving an instance with no pk inserts a copy
+    tr._state.adding = True
+    tr.start_date = timezone.localdate() + timedelta(days=3)
+    tr.deadline_date = tr.start_date + length
+    tr.status = TaskRequest.Status.PLANNED
+    tr.save()
+
+    spec.pk = None
+    spec._state.adding = True
+    spec.task_request = tr
+    spec.save()
+
+    new = Recommendation.objects.create(
+        task_request=tr, source=rec.source, robot_model=rec.robot_model,
+        predicted_platform=rec.predicted_platform, platform_confidence=rec.platform_confidence,
+        skill_pack=rec.skill_pack, policy_conditioning=rec.policy_conditioning,
+        quoted_price=rec.quoted_price, price_breakdown=rec.price_breakdown)
+    new.addons.set(rec.addons.all())
+    refresh_conditioning(requote(new))  # today's prices, new dates
+    return tr
+
+
 # Forward-only lifecycle staff step through (A07); the customer sees it as a timeline (S11).
 FLOW = [Order.Status.CONFIRMED, Order.Status.DISPATCHED, Order.Status.ON_SITE,
         Order.Status.RUNNING, Order.Status.COMPLETED, Order.Status.COLLECTED]
+# Still in progress until the robot is collected (or the order is cancelled).
+ONGOING = [Order.Status.PENDING_PAYMENT, *FLOW[:-1]]
 
 
 def next_status(order):
@@ -205,3 +245,24 @@ def assignable_units(order):
     if item.fleet_unit_id:
         qs = qs | FleetUnit.objects.filter(pk=item.fleet_unit_id)
     return item, qs.distinct()
+
+
+def order_summary(order) -> dict:
+    """What the shared setup summary partial needs, built from the order's own line items
+    (the prices copied at checkout), not from today's catalogue."""
+    items = list(order.items.select_related("robot_model", "addon", "skill_pack"))
+    lines = []
+    for i in items:
+        days = f" × {i.quantity} day{'s' if i.quantity != 1 else ''}" if i.kind in (i.Kind.ROBOT, i.Kind.ADDON) else ""
+        lines.append((i.description + days, i.line_total))
+    robot_item = next((i for i in items if i.kind == OrderItem.Kind.ROBOT), None)
+    pack_item = next((i for i in items if i.kind == OrderItem.Kind.SKILL_PACK), None)
+    return {
+        "robot": robot_item.robot_model if robot_item else None,
+        "addons": [i.addon for i in items if i.kind == OrderItem.Kind.ADDON],
+        "skill_pack": pack_item.skill_pack if pack_item else None,
+        "lines": lines,
+        "total": order.total,
+        "discount": order.discount,
+        "promo_code": order.promo_code.code if order.promo_code else "",
+    }

@@ -39,12 +39,7 @@
   <div class="col-lg-5">
     <aside class="bc-card bc-rec p-4 bc-sticky">
       <h2 class="bc-section">Order summary</h2>
-      <table class="table table-sm small mb-0">
-        {% for label, amount in lines %}<tr><td>{{ label }}</td><td class="text-end">S${{ amount|floatformat:2 }}</td></tr>{% endfor %}
-        <tr><td>Subtotal</td><td class="text-end">S${{ subtotal }}</td></tr>
-        {% if discount %}<tr class="text-success"><td>Promo {{ promo.code }}</td><td class="text-end">-S${{ discount }}</td></tr>{% endif %}
-        <tr class="fw-bold"><td>Total</td><td class="text-end">S${{ total }}</td></tr>
-      </table>
+      {% include "partials/setup_summary.html" with robot=rec.robot_model addons=rec.addons.all skill_pack=rec.skill_pack lines=lines total=total discount=discount promo_code=promo.code tuning=tuning %}
     </aside>
   </div>
 </div>

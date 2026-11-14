@@ -101,16 +101,25 @@
         </div>
         <div class="mb-1">
           <label class="form-label" for="{{ form.floor_plan.id_for_label }}">{{ form.floor_plan.label }}</label>
-          {% if tr.floor_plan %}
-          <div class="d-flex gap-3 align-items-center mb-2">
-            <img src="{{ tr.floor_plan.url }}" alt="Your floor plan" class="bc-plan-thumb">
-            <small class="text-muted">Uploaded. Choose a new file to replace it.</small>
-          </div>
-          {% endif %}
           {{ form.floor_plan }}
-          <div class="form-text">A sketch or phone photo is fine. Mark rooms the robot should skip.</div>
+          <div class="form-text">A sketch or phone photo is fine.{% if tr.floor_plan %} Choosing a new file replaces the current one (and clears its zones).{% endif %}</div>
           {% for e in form.floor_plan.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
         </div>
+
+        {# Keep-out zones: drag rectangles on the plan. Stored as fractions of the image, so they fit any size. #}
+        <div class="mt-3" id="zone-panel" {% if not tr.floor_plan %}hidden{% endif %}>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <div class="form-label mb-1">Keep-out zones</div>
+            <button type="button" class="btn btn-link btn-sm p-0 text-danger" id="zone-clear">Clear all</button>
+          </div>
+          <p class="small text-muted mb-2">Drag on the plan to mark areas the robot must stay out of, like a study or a room with fragile things.</p>
+          <div class="bc-zone-editor" id="zone-editor">
+            <img src="{% if tr.floor_plan %}{{ tr.floor_plan.url }}{% endif %}" alt="Your floor plan">
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-2 small" id="zone-list"></div>
+        </div>
+        {{ form.keep_out_zones }}
+        {% for e in form.keep_out_zones.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
       </section>
     </div>
 
@@ -226,6 +235,78 @@
       : "Fully booked on these dates. Try other dates or another robot.";
     units.className = "small mb-3 " + (data.units_free ? "text-success" : "text-danger");
   }
+
+  // ---- keep-out zone editor: pointer events work for mouse, pen and touch
+  const panel = document.getElementById("zone-panel");
+  const editor = document.getElementById("zone-editor");
+  const plan = editor.querySelector("img");
+  const zonesInput = form.querySelector("input[name=keep_out_zones]");
+  let zones = [];
+  try { zones = JSON.parse(zonesInput.value || "[]"); } catch { zones = []; }
+
+  const clamp = v => Math.min(1, Math.max(0, v));
+  function point(e) {  // pointer position as a fraction of the image (0..1)
+    const r = plan.getBoundingClientRect();
+    return { x: clamp((e.clientX - r.left) / r.width), y: clamp((e.clientY - r.top) / r.height) };
+  }
+  function place(el, z) {
+    Object.assign(el.style, { left: z.x * 100 + "%", top: z.y * 100 + "%", width: z.w * 100 + "%", height: z.h * 100 + "%" });
+  }
+  function drawZones() {
+    editor.querySelectorAll(".bc-zone").forEach(n => n.remove());
+    const list = document.getElementById("zone-list");
+    list.innerHTML = "";
+    zones.forEach((z, i) => {
+      const box = document.createElement("div");
+      box.className = "bc-zone";
+      box.innerHTML = `<span>${i + 1}</span>`;
+      place(box, z);
+      editor.appendChild(box);
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "btn btn-sm btn-outline-danger py-0";
+      chip.textContent = `Zone ${i + 1} ×`;
+      chip.setAttribute("aria-label", `Remove zone ${i + 1}`);
+      chip.onclick = () => { zones.splice(i, 1); drawZones(); };
+      list.appendChild(chip);
+    });
+    if (!zones.length) list.innerHTML = '<span class="text-muted">No zones yet.</span>';
+    zonesInput.value = JSON.stringify(zones);
+  }
+
+  let start = null, ghost = null;
+  editor.addEventListener("pointerdown", e => {
+    start = point(e);
+    ghost = document.createElement("div");
+    ghost.className = "bc-zone bc-zone-drawing";
+    editor.appendChild(ghost);
+    editor.setPointerCapture(e.pointerId);
+  });
+  editor.addEventListener("pointermove", e => {
+    if (!start) return;
+    const p = point(e);
+    place(ghost, { x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y) });
+  });
+  editor.addEventListener("pointerup", e => {
+    if (!start) return;
+    const p = point(e);
+    const z = { x: Math.min(start.x, p.x), y: Math.min(start.y, p.y), w: Math.abs(p.x - start.x), h: Math.abs(p.y - start.y) };
+    ghost.remove(); start = null;
+    if (z.w > 0.02 && z.h > 0.02 && zones.length < 20) zones.push(z);  // ignore accidental clicks
+    drawZones();
+  });
+  document.getElementById("zone-clear").onclick = () => { zones = []; drawZones(); };
+
+  // a newly chosen file can be marked up straight away, before saving (zones belong to the old plan, so reset)
+  form.querySelector("input[name=floor_plan]").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    plan.src = URL.createObjectURL(file);
+    panel.hidden = false;
+    zones = [];
+    drawZones();
+  });
+  drawZones();
 
   form.addEventListener("change", e => {
     if (e.target.name === "robot") applyCompatibility();

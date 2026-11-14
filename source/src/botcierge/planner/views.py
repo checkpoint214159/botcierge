@@ -51,10 +51,32 @@ def result(request, pk):
         "spec": spec,
         "rec": rec,
         "lines": rec_quote_lines(rec),
+        "total_label": total_label(rec),
+        "match": rec.platform_confidence if rec.source == rec.Source.ML else None,
+        "tuning": describe_tuning(task_request, spec),
         "order": order,
         "low_confidence": spec.category_confidence < CATEGORY_CONFIDENCE_FLOOR,
         "reasons": explain(task_request, spec, rec),
     })
+
+
+def total_label(rec) -> str:
+    return "Total" if "delivery_and_setup" in rec.price_breakdown else "Total before delivery"
+
+
+def describe_tuning(tr, spec) -> str:
+    """Customer-friendly line under the skill pack (the full conditioning JSON is staff-only)."""
+    extras = [spec.get_task_category_display().lower()]
+    if tr.has_pets:
+        extras.append("pets")
+    if tr.has_children:
+        extras.append("children")
+    if tr.quiet_hours:
+        extras.append(f"quiet hours {tr.quiet_hours}")
+    if tr.keep_out_zones:
+        n = len(tr.keep_out_zones)
+        extras.append(f"{n} keep-out zone{'s' if n != 1 else ''}")
+    return "Tuned for " + ", ".join(extras) + "."
 
 
 def explain(tr, spec, rec):

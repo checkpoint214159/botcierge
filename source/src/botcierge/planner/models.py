@@ -21,6 +21,9 @@ class TaskRequest(models.Model):
 
     # space
     floor_plan = models.ImageField(upload_to="floorplans/", blank=True)
+    keep_out_zones = models.JSONField(default=list, blank=True,
+                                      help_text="Rectangles on the floor plan the robot must avoid: "
+                                                "[{x, y, w, h}] as fractions of the image size")
     address = models.ForeignKey("accounts.Address", on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name="task_requests", help_text="Where the robot is delivered (set on the booking page)")
     housing_type = models.CharField(max_length=20, default="hdb")

@@ -24,7 +24,11 @@ class Review(models.Model):
 
 
 class SupportTicket(models.Model):
+    """S14: one ticket per order. The customer can save it as a draft and edit it until they
+    submit; after that it is read-only for them (changes go by email) and staff take over (A09)."""
+
     class Status(models.TextChoices):
+        DRAFT = "draft", "Draft (not sent)"
         OPEN = "open", "Open"
         IN_PROGRESS = "in_progress", "In progress"
         RESOLVED = "resolved", "Resolved"
@@ -37,17 +41,31 @@ class SupportTicket(models.Model):
 
     customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tickets")
     order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name="tickets")
+    class Category(models.TextChoices):
+        ROBOT = "robot", "The robot isn't working properly"
+        SAFETY = "safety", "Damage or a safety concern"
+        SCHEDULE = "schedule", "Delivery, timing or collection"
+        BILLING = "billing", "Billing or refund"
+        OTHER = "other", "Something else"
+
     subject = models.CharField(max_length=150)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
+    description = models.TextField(blank=True, help_text="What happened, in the customer's words")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     priority = models.CharField(max_length=20, choices=Priority.choices, default=Priority.NORMAL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-updated_at"]
 
     def __str__(self):
         return self.subject
+
+    @property
+    def is_draft(self) -> bool:
+        return self.status == self.Status.DRAFT
 
 
 class TicketMessage(models.Model):

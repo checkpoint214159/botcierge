@@ -1,0 +1,22 @@
+{# One order in the history list: photo, dates, where, price, how far along. The whole row opens the order. #}
+<div class="bc-card bc-row-link p-3 mb-2 position-relative">
+  <div class="d-flex gap-3 align-items-center flex-wrap">
+    {% if o.robot %}{% include "partials/robot_photo.html" with robot=o.robot css="bc-frame-sm" %}{% endif %}
+    <div class="flex-grow-1">
+      <a href="{% url 'orders:order_detail' o.pk %}" class="fw-semibold stretched-link text-reset text-decoration-none">
+        Order #{{ o.pk }}{% if o.robot %} · {{ o.robot.name }}{% endif %}</a>
+      <div class="small text-muted">{{ o.start_date|date:"j M" }} to {{ o.end_date|date:"j M Y" }} · {{ o.delivery_address|truncatechars:40 }}</div>
+    </div>
+    <div class="text-end">
+      <div class="fw-bold">S${{ o.total }}</div>
+      <span class="badge {% if o.status == 'cancelled' %}text-bg-secondary{% else %}bc-badge{% endif %}">{{ o.get_status_display }}</span>
+      {% if o.step and o.status != "collected" %}<div class="small text-muted">step {{ o.step }} of {{ o.steps_total }}</div>{% endif %}
+    </div>
+  </div>
+  {% if rebook %}
+  {# position-relative + z-index keeps the button clickable above the row's stretched link #}
+  <form method="post" action="{% url 'orders:order_rebook' o.pk %}" class="text-end mt-2 position-relative" style="z-index: 2">{% csrf_token %}
+    <button class="btn btn-sm bc-btn-outline">Book again</button>
+  </form>
+  {% endif %}
+</div>

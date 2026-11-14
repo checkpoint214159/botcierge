@@ -1,3 +1,4 @@
+import json
 import re
 
 from django import forms
@@ -23,6 +24,10 @@ class BookingForm(BootstrapFormMixin, forms.Form):
     address = forms.ModelChoiceField(queryset=Address.objects.none(), required=False,
                                      empty_label="Choose a saved address", label="Deliver to")
     floor_plan = forms.ImageField(required=False, label="Floor plan or photo of the space")
+    # filled in by the zone editor on the page as JSON: [{"x":..,"y":..,"w":..,"h":..}, ...]
+    keep_out_zones = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    MAX_ZONES = 20
 
     def __init__(self, *args, task_request, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,6 +43,26 @@ class BookingForm(BootstrapFormMixin, forms.Form):
         if start < timezone.localdate():
             raise forms.ValidationError("The start date can't be in the past.")
         return start
+
+    def clean_keep_out_zones(self):
+        """Never trust the browser: check the JSON is a short list of rectangles inside the image."""
+        raw = self.cleaned_data.get("keep_out_zones") or "[]"
+        try:
+            zones = json.loads(raw)
+        except json.JSONDecodeError:
+            raise forms.ValidationError("The keep-out zones couldn't be read. Please redraw them.")
+        if not isinstance(zones, list) or len(zones) > self.MAX_ZONES:
+            raise forms.ValidationError(f"Draw at most {self.MAX_ZONES} keep-out zones.")
+        clean = []
+        for z in zones:
+            try:
+                x, y, w, h = (round(float(z[k]), 4) for k in ("x", "y", "w", "h"))
+            except (KeyError, TypeError, ValueError):
+                raise forms.ValidationError("The keep-out zones couldn't be read. Please redraw them.")
+            if not (0 <= x <= 1 and 0 <= y <= 1 and 0 < w <= 1 - x + 1e-4 and 0 < h <= 1 - y + 1e-4):
+                raise forms.ValidationError("A keep-out zone is outside the floor plan. Please redraw it.")
+            clean.append({"x": x, "y": y, "w": w, "h": h})
+        return clean
 
     def clean(self):
         data = super().clean()

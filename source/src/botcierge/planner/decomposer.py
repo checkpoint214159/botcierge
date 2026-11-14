@@ -155,6 +155,8 @@ def build_conditioning(tr, category, skill_pack, addons, est_hours, subtasks) ->
             "floor_type": tr.floor_type,
             "multi_level": tr.has_stairs,
             "outdoor": tr.is_outdoor,
+            # rectangles drawn on the floor plan, as fractions of its width/height (x, y, w, h)
+            "keep_out_zones": tr.keep_out_zones,
         },
         "constraints": {
             "window": [tr.start_date.isoformat(), tr.deadline_date.isoformat()],
@@ -289,3 +291,12 @@ def _refresh_spec_checks(tr, spec, total, robot):
     spec.within_budget = total <= tr.budget_sgd
     spec.edge_cases = find_edge_cases(tr, spec.task_category, spec.est_days_needed, total, robot)
     spec.save(update_fields=["within_budget", "edge_cases"])
+
+
+def refresh_conditioning(rec: Recommendation) -> Recommendation:
+    """Rebuild the robot's config after booking details changed (dates, floor plan, keep-out zones)."""
+    tr, spec = rec.task_request, rec.task_request.spec
+    rec.policy_conditioning = build_conditioning(
+        tr, spec.task_category, rec.skill_pack, list(rec.addons.all()), spec.est_robot_hours, spec.subtasks)
+    rec.save(update_fields=["policy_conditioning"])
+    return rec

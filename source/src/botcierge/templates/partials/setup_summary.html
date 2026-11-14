@@ -1,0 +1,41 @@
+{% comment %}
+Setup summary: robot photo, attachments, skill pack and the price breakdown.
+Shared by the plan result page, checkout, confirmation and the order page, so they all look the same.
+The caller wraps it in its own card and adds its own buttons underneath.
+
+  robot, addons, skill_pack   what is being rented
+  lines                       list of (label, amount); amount None = "not priced yet"
+  total, total_label          bottom row, e.g. "Total" or "Paid"
+  discount, promo_code        optional promo row
+  match                       optional ML platform confidence (0-1), shown under the robot name
+  tuning                      optional sentence under the skill pack ("Tuned for ...")
+{% endcomment %}
+{% if robot %}
+<div class="d-flex gap-3 align-items-center">
+  {% include "partials/robot_photo.html" with robot=robot css="bc-frame-sm" %}
+  <div>
+    <a href="{% url 'catalog:robot_detail' robot.slug %}" class="h5 d-block mb-0">{{ robot.manufacturer }} {{ robot.name }}</a>
+    <small class="text-muted">{{ robot.get_platform_display }}{% if match %} · {% widthratio match 1 100 %}% match{% endif %}</small>
+  </div>
+</div>
+{% else %}<p class="text-danger mb-0">No robot in the fleet fits every constraint yet.</p>{% endif %}
+
+<div class="mt-3"><div class="bc-k">Attachments</div>
+  {% for a in addons %}<span class="badge text-bg-light border me-1 mb-1">{{ a.name }}</span>{% empty %}<small class="text-muted">None</small>{% endfor %}
+</div>
+
+{% if skill_pack %}
+<div class="mt-3 bc-skill p-3">
+  <div class="bc-k">Skill pack</div>
+  <strong>{{ skill_pack.name }}</strong> <small class="text-muted">v{{ skill_pack.version }}</small>
+  <div class="small text-muted">{{ skill_pack.summary }}.{% if tuning %} {{ tuning }}{% endif %}</div>
+</div>
+{% endif %}
+
+<table class="table table-sm mt-3 mb-2 small">
+  {% for label, amount in lines %}
+  <tr><td>{{ label }}</td><td class="text-end">{% if amount is None %}<span class="text-muted">-</span>{% else %}S${{ amount|floatformat:2 }}{% endif %}</td></tr>
+  {% endfor %}
+  {% if discount %}<tr class="text-success"><td>Promo{% if promo_code %} {{ promo_code }}{% endif %}</td><td class="text-end">-S${{ discount|floatformat:2 }}</td></tr>{% endif %}
+  <tr class="fw-bold"><td>{{ total_label|default:"Total" }}</td><td class="text-end">S${{ total|floatformat:2 }}</td></tr>
+</table>
