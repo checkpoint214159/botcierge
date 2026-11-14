@@ -11,6 +11,26 @@ from config.form_mixins import BootstrapFormMixin
 from planner.decomposer import eligible_robots
 
 
+def check_setup(form, data):
+    """Attachments must fit the robot's platform and the skill pack must run on the robot.
+    Shared by the customer's booking form and the staff change-setup form (A08)."""
+    robot = data.get("robot")
+    if robot:
+        bad = [a.name for a in data.get("addons") or [] if not a.fits(robot.platform)]
+        if bad:
+            form.add_error("addons", f"Not compatible with {robot.name}: {', '.join(bad)}.")
+        pack = data.get("skill_pack")
+        if pack and not pack.compatible_robots.filter(pk=robot.pk).exists():
+            form.add_error("skill_pack", f"{pack.name} doesn't run on {robot.name}.")
+    return data
+
+
+def skill_packs_for(category):
+    """Active skill packs offered for this task type (SkillPack.task_categories, A05)."""
+    return SkillPack.objects.filter(pk__in=[p.pk for p in SkillPack.objects.filter(is_active=True)
+                                            if category in p.category_list])
+
+
 class BookingForm(BootstrapFormMixin, forms.Form):
     """S08 + S09: the customer adjusts the recommended setup and fills in the booking details."""
 
@@ -33,9 +53,7 @@ class BookingForm(BootstrapFormMixin, forms.Form):
         super().__init__(*args, **kwargs)
         # only robots and skill packs that suit this task type and meet its payload/stairs/outdoor needs
         self.fields["robot"].queryset = eligible_robots(task_request).order_by("daily_rate")
-        category = task_request.spec.task_category
-        suited = [p.pk for p in SkillPack.objects.filter(is_active=True) if category in p.category_list]
-        self.fields["skill_pack"].queryset = SkillPack.objects.filter(pk__in=suited)
+        self.fields["skill_pack"].queryset = skill_packs_for(task_request.spec.task_category)
         self.fields["address"].queryset = Address.objects.filter(customer=task_request.customer)
         self.fields["start_date"].widget.attrs["min"] = timezone.localdate().isoformat()
 
@@ -66,16 +84,7 @@ class BookingForm(BootstrapFormMixin, forms.Form):
         return clean
 
     def clean(self):
-        data = super().clean()
-        robot = data.get("robot")
-        if robot:
-            bad = [a.name for a in data.get("addons") or [] if not a.fits(robot.platform)]
-            if bad:
-                self.add_error("addons", f"Not compatible with {robot.name}: {', '.join(bad)}.")
-            pack = data.get("skill_pack")
-            if pack and not pack.compatible_robots.filter(pk=robot.pk).exists():
-                self.add_error("skill_pack", f"{pack.name} doesn't run on {robot.name}.")
-        return data
+        return check_setup(self, super().clean())
 
 
 class CheckoutForm(BootstrapFormMixin, forms.Form):

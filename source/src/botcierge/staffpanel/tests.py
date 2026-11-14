@@ -211,3 +211,86 @@ class AddOnAndSkillPackTests(StaffFixture):
         self.assertContains(resp, "M1 · Task type")
         self.assertContains(resp, "RandomForestClassifier")
         self.assertContains(resp, "Coverage")
+
+
+class ReviewTests(StaffFixture):
+    """A08: review every paid order before dispatch; approve, follow up or change the setup."""
+
+    def book(self, offset=3, budget=500, description="mop and vacuum my flat", **kw):
+        user = User.objects.get(username="demo")
+        start = date.today() + timedelta(days=offset)
+        tr = TaskRequest.objects.create(
+            customer=user, description=description, area_m2=90, num_rooms=4, floor_type="tile",
+            budget_sgd=budget, start_date=start, deadline_date=start + timedelta(days=1), hours_per_day=4,
+            address=Address.objects.get(customer=user), **kw)
+        return create_order(user, decompose(tr), "1 Test Rd", None)
+
+    def test_queue_groups_by_ship_day_then_biggest_first(self):
+        from orders.review import grouped, review_queue
+        later = self.book(offset=5)
+        small = self.book(offset=2, budget=300)
+        big = self.book(offset=2, budget=3000, description="keep my grandmother company", category_hint="elder_care",
+                        payload_kg=1)
+        if big.total < small.total:  # make sure the test means what it says
+            small, big = big, small
+        queue = review_queue()
+        self.assertEqual([o.pk for o in queue], [big.pk, small.pk, later.pk])
+        self.assertEqual([len(os) for _, os in grouped(queue)], [2, 1])
+        resp = self.client.get(reverse("staffpanel:review_list"))
+        self.assertContains(resp, "Start reviewing")
+        self.assertContains(resp, f"Order #{big.pk}")
+
+    def test_approve_tells_customer_and_moves_to_next(self):
+        first, second = self.book(offset=2), self.book(offset=4)
+        resp = self.client.post(reverse("staffpanel:review_detail", args=[first.pk]), {"action": "approve"})
+        self.assertRedirects(resp, reverse("staffpanel:review_detail", args=[second.pk]))
+        first.refresh_from_db()
+        self.assertEqual(first.review_status, "approved")
+        self.assertTrue(first.events.filter(note__contains="checked by our team").exists())
+        # last one goes back to the list
+        resp = self.client.post(reverse("staffpanel:review_detail", args=[second.pk]), {"action": "approve"})
+        self.assertRedirects(resp, reverse("staffpanel:review_list"))
+
+    def test_follow_up_needs_a_note_and_stays_internal(self):
+        order = self.book()
+        url = reverse("staffpanel:review_detail", args=[order.pk])
+        self.client.post(url, {"action": "reject"})
+        order.refresh_from_db()
+        self.assertEqual(order.review_status, "pending")
+        self.client.post(url, {"action": "reject", "note": "Ask about the stairs"})
+        order.refresh_from_db()
+        self.assertEqual((order.review_status, order.review_note), ("rejected", "Ask about the stairs"))
+        self.assertEqual(order.events.count(), 1)  # nothing new on the customer's timeline
+
+    def test_override_saves_staff_recommendation_and_keeps_what_customer_paid(self):
+        from planner.models import Recommendation
+        order = self.book()
+        paid = order.total
+        tr = order.recommendation.task_request
+        from planner.decomposer import eligible_robots
+        other = eligible_robots(tr).exclude(pk=order.recommendation.robot_model_id).first()
+        resp = self.client.post(reverse("staffpanel:review_detail", args=[order.pk]), {
+            "action": "override", "robot": other.pk, "addons": [], "skill_pack": ""})
+        self.assertRedirects(resp, reverse("staffpanel:review_detail", args=[order.pk]))
+        order.refresh_from_db()
+        rec = order.recommendation
+        self.assertEqual((rec.source, rec.robot_model, rec.is_selected), (Recommendation.Source.STAFF, other, True))
+        self.assertEqual(order.items.get(kind="robot").robot_model, other)
+        self.assertEqual(order.items.get(kind="robot").fleet_unit.robot_model, other)
+        self.assertEqual(order.total, paid)
+        self.assertEqual(sum(i.line_total for i in order.items.all()), order.subtotal)
+        self.assertTrue(order.events.filter(note__contains="adjusted your setup").exists())
+        self.assertEqual(tr.recommendations.filter(source="ml").count(), 1)  # ML row kept for A13
+
+    def test_override_rejects_incompatible_attachment(self):
+        order = self.book()
+        robot = order.recommendation.robot_model
+        bad = next(a for a in AddOn.objects.filter(is_active=True) if not a.fits(robot.platform))
+        resp = self.client.post(reverse("staffpanel:review_detail", args=[order.pk]), {
+            "action": "override", "robot": robot.pk, "addons": [bad.pk], "skill_pack": ""})
+        self.assertContains(resp, "Not compatible with")
+
+    def test_customers_cannot_open_review(self):
+        order = self.book()
+        self.client.login(username="demo", password="demopass123")
+        self.assertEqual(self.client.get(reverse("staffpanel:review_detail", args=[order.pk])).status_code, 302)

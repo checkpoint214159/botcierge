@@ -324,6 +324,11 @@ class TrackingTests(BookingFixture):
         order = self.book()
         staff = self.staff_client()
         url = reverse("staffpanel:order_detail", args=[order.pk])
+        # A08: can't dispatch before the review is approved
+        staff.post(url, {"action": "advance", "note": "On the way"})
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.CONFIRMED)
+        staff.post(reverse("staffpanel:review_detail", args=[order.pk]), {"action": "approve"})
         staff.post(url, {"action": "advance", "note": "On the way"})
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.DISPATCHED)

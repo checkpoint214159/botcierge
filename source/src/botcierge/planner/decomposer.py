@@ -251,15 +251,17 @@ def _postal_code(tr: TaskRequest) -> str | None:
 
 
 @transaction.atomic
-def save_customer_edit(base: Recommendation, robot, addons, skill_pack) -> Recommendation:
-    """S08: the customer changed the robot, add-ons or skill pack. Re-quote and save a new
-    Recommendation(source=CUSTOMER); the ML row is kept so acceptance can be measured (A13)."""
+def save_customer_edit(base: Recommendation, robot, addons, skill_pack,
+                       source=Recommendation.Source.CUSTOMER) -> Recommendation:
+    """S08: the customer changed the robot, add-ons or skill pack (or staff did, A08: source=STAFF).
+    Re-quote and save a new Recommendation; the ML row is kept so acceptance can be measured (A13)
+    and the human choice can be used as a training label (A12)."""
     tr = base.task_request
     spec = tr.spec
     total, breakdown = build_quote(robot, addons, skill_pack, spec.est_days_needed, _postal_code(tr))
     rec = Recommendation.objects.create(
         task_request=tr,
-        source=Recommendation.Source.CUSTOMER,
+        source=source,
         robot_model=robot,
         predicted_platform=base.predicted_platform,
         platform_confidence=base.platform_confidence,

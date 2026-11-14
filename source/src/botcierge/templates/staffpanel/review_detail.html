@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Review order #{{ order.pk }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+  <a href="{% url 'staffpanel:review_list' %}?show={{ order.review_status }}" class="small">&larr; All orders</a>
+  <div class="d-flex align-items-center gap-2">
+    {% if position %}<span class="small text-muted">{{ position }} of {{ queue_size }} · {{ state_label|lower }}</span>{% endif %}
+    {% if prev_order %}<a id="prev" href="{% url 'staffpanel:review_detail' prev_order.pk %}" class="btn btn-sm bc-btn-outline" title="Previous (← key)">&larr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&larr;</span>{% endif %}
+    {% if next_order %}<a id="next" href="{% url 'staffpanel:review_detail' next_order.pk %}" class="btn btn-sm bc-btn-outline" title="Next (→ key)">&rarr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&rarr;</span>{% endif %}
+  </div>
+</div>
+
+<h1 class="h4 mb-1">Order #{{ order.pk }}{% if spec %} · {{ spec.get_task_category_display }}{% endif %}
+  <span class="badge {% if order.review_status == 'approved' %}bc-badge{% elif order.review_status == 'rejected' %}text-bg-warning{% else %}text-bg-light border{% endif %}">{{ state_label }}</span></h1>
+<p class="text-muted mb-3">{{ order.customer.get_full_name|default:order.customer.username }} ({{ order.customer.email|default:"no email" }}) · ships {{ order.start_date|date:"D j M" }}, back {{ order.end_date|date:"j M" }} · S${{ order.total }} · {{ order.delivery_address }}</p>
+
+{% if flags %}<div class="mb-3">{% for f in flags %}<span class="badge text-bg-warning-subtle text-warning-emphasis border me-1">{{ f }}</span>{% endfor %}</div>{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% if tr %}
+    <section class="bc-card p-4 mb-3">
+      <h2 class="bc-section">What the customer asked for</h2>
+      {% if tr.title %}<strong>{{ tr.title }}</strong>{% endif %}
+      <blockquote class="border-start ps-3 my-2">{{ tr.description }}</blockquote>
+      <div class="row small g-2">
+        <div class="col-6 col-md-4"><div class="bc-k">Home</div>{{ tr.housing_type|upper }}, {{ tr.area_m2 }} m², {{ tr.num_rooms }} rooms</div>
+        <div class="col-6 col-md-4"><div class="bc-k">Floor</div>{{ tr.get_floor_type_display }}</div>
+        <div class="col-6 col-md-4"><div class="bc-k">Budget</div>S${{ tr.budget_sgd }}</div>
+        <div class="col-6 col-md-4"><div class="bc-k">Window</div>{{ tr.start_date|date:"j M" }} to {{ tr.deadline_date|date:"j M" }}, {{ tr.hours_per_day }} h/day</div>
+        <div class="col-6 col-md-4"><div class="bc-k">Quiet hours</div>{{ tr.quiet_hours|default:"none" }}</div>
+        <div class="col-6 col-md-4"><div class="bc-k">Payload</div>{{ tr.payload_kg }} kg</div>
+        <div class="col-12"><div class="bc-k">About the space</div>
+          {% if tr.has_stairs %}<span class="badge text-bg-light border">Stairs</span>{% endif %}
+          {% if tr.is_outdoor %}<span class="badge text-bg-light border">Outdoor</span>{% endif %}
+          {% if tr.has_pets %}<span class="badge text-bg-light border">Pets</span>{% endif %}
+          {% if tr.has_children %}<span class="badge text-bg-light border">Children</span>{% endif %}
+          {% if tr.fragile_items %}<span class="badge text-bg-light border">Fragile items</span>{% endif %}
+          {% if not tr.has_stairs and not tr.is_outdoor and not tr.has_pets and not tr.has_children and not tr.fragile_items %}<span class="text-muted">Nothing special</span>{% endif %}
+        </div>
+        {% if tr.special_notes %}<div class="col-12"><div class="bc-k">Notes</div>{{ tr.special_notes }}</div>{% endif %}
+      </div>
+      {% if tr.floor_plan %}
+      <div class="bc-k mt-3">Floor plan{% if tr.keep_out_zones %} · {{ tr.keep_out_zones|length }} keep-out zone{{ tr.keep_out_zones|length|pluralize }}{% endif %}</div>
+      {# same overlay as the customer's zone editor; zones are stored as fractions of the image #}
+      <div class="bc-zone-editor" style="cursor: default">
+        <img src="{{ tr.floor_plan.url }}" alt="Customer's floor plan">
+        {% for z in tr.keep_out_zones %}
+        <div class="bc-zone" style="left: {% widthratio z.x 1 100 %}%; top: {% widthratio z.y 1 100 %}%; width: {% widthratio z.w 1 100 %}%; height: {% widthratio z.h 1 100 %}%"><span>{{ forloop.counter }}</span></div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="bc-card p-4 mb-3">
+      <h2 class="bc-section">What the models decided</h2>
+      <table class="table table-sm small mb-2">
+        <tr><td>Task type (M1)</td><td>{{ spec.get_task_category_display }}{% if tr.category_hint %} <span class="text-muted">(picked by the customer)</span>{% else %} <span class="text-muted">· {% widthratio spec.category_confidence 1 100 %}% sure</span>{% endif %}</td></tr>
+        <tr><td>Effort (M5)</td><td>{{ spec.est_robot_hours|floatformat:1 }} robot-hours over {{ spec.est_days_needed }} day{{ spec.est_days_needed|pluralize }}</td></tr>
+        <tr><td>Platform (M2)</td><td>{{ rec.predicted_platform|default:"-" }}{% if rec.platform_confidence %} <span class="text-muted">· {% widthratio rec.platform_confidence 1 100 %}% sure</span>{% endif %}</td></tr>
+        <tr><td>Robot</td><td>{{ rec.robot_model.name|default:"none" }} <span class="text-muted">({{ rec.get_source_display|lower }})</span></td></tr>
+        <tr><td>Attachments (M3)</td><td>{% for a in rec.addons.all %}{{ a.name }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}</td></tr>
+        <tr><td>Skill pack (M4)</td><td>{{ rec.skill_pack|default:"none" }}</td></tr>
+      </table>
+      {% if spec.edge_cases %}<div class="bc-k">Things to watch</div>
+      <ul class="small">{% for e in spec.edge_cases %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% if spec.subtasks %}<div class="bc-k">Steps the robot will do</div>
+      <ol class="small mb-0">{% for s in spec.subtasks %}<li>{{ s }}</li>{% endfor %}</ol>{% endif %}
+    </section>
+
+    <section class="bc-card p-4 mb-3">
+      <details>
+        <summary class="bc-section d-inline">Robot config (sent to the robot)</summary>
+        <pre class="small mt-2 mb-0 p-2 rounded bg-body-tertiary" style="max-height: 24rem; overflow: auto">{{ conditioning }}</pre>
+      </details>
+    </section>
+
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Setup history</h2>
+      <ul class="small mb-0">
+        {% for h in history %}<li>{{ h.created_at|date:"j M, H:i" }} · <strong>{{ h.get_source_display }}</strong> · {{ h.robot_model.name|default:"no robot" }}{% if h.skill_pack %}, {{ h.skill_pack.name }}{% endif %} · S${{ h.quoted_price }}{% if h.pk == rec.pk %} <span class="badge bc-badge">current</span>{% endif %}</li>{% endfor %}
+      </ul>
+    </section>
+    {% else %}
+    <div class="bc-card p-4 text-muted">This order has no plan attached, so there's nothing to review.</div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="bc-sticky">
+      <section class="bc-card p-4 mb-3">
+        <h2 class="bc-section">Decision</h2>
+        {% if order.reviewed_by %}<p class="small text-muted mb-2">{{ state_label }} by {{ order.reviewed_by.first_name|default:order.reviewed_by.username }}, {{ order.reviewed_at|date:"j M, H:i" }}{% if order.review_note %}: “{{ order.review_note }}”{% endif %}</p>{% endif %}
+        {% if can_act %}
+        <form method="post">{% csrf_token %}
+          <textarea name="note" class="form-control mb-2" rows="2" placeholder="Note for the team (needed for follow-up, e.g. what to ask the customer)"></textarea>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-warning" name="action" value="reject">Needs follow-up</button>
+            <button class="btn bc-btn flex-grow-1" name="action" value="approve">Approve</button>
+          </div>
+        </form>
+        <p class="small text-muted mt-2 mb-0">Approving lets the order be dispatched and tells the customer it was checked. Follow-up stays internal: email the customer yourself.</p>
+        {% else %}
+        <p class="small text-muted mb-0">This order is {{ order.get_status_display|lower }}, so it can't be reviewed any more.</p>
+        {% endif %}
+      </section>
+
+      <section class="bc-card p-4 mb-3">
+        <h2 class="bc-section">Order</h2>
+        {% include "partials/setup_summary.html" with robot=summary.robot addons=summary.addons skill_pack=summary.skill_pack lines=summary.lines total=summary.total total_label="Paid" discount=summary.discount promo_code=summary.promo_code %}
+        <a href="{% url 'staffpanel:order_detail' order.pk %}" class="small">Fleet unit and dispatch</a>
+      </section>
+
+      {% if override %}
+      <section class="bc-card p-4">
+        <details {% if override.errors %}open{% endif %}>
+          <summary class="bc-section d-inline">Change setup</summary>
+          <p class="small text-muted mt-2">Same choices the customer had. The customer pays what they already paid; any price difference shows as an adjustment line.</p>
+          <form method="post" class="bc-staff-form">{% csrf_token %}
+            <input type="hidden" name="action" value="override">
+            {% for field in override %}{% include "partials/field.html" %}{% endfor %}
+            <button class="btn bc-btn-outline w-100">Save new setup</button>
+          </form>
+        </details>
+      </section>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/chip_select.js' %}"></script>
+<script>
+  // ← / → move through the queue, unless the reviewer is typing
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+    const link = document.getElementById(e.key === "ArrowLeft" ? "prev" : e.key === "ArrowRight" ? "next" : "");
+    if (link) location.href = link.href;
+  });
+</script>
+{% endblock %}

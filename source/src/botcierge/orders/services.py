@@ -129,24 +129,10 @@ class NoUnitFree(Exception):
     pass
 
 
-def create_order(user, rec, address: str, promo, method: str = "card", reference: str = "") -> Order:
-    """Build the Order, its lines, a paid mock Payment and the first timeline event, and reserve a unit.
-    Must be called inside transaction.atomic()."""
-    start, end = booking_window(rec)
-    unit = free_units(rec.robot_model, start, end).first()
-    if unit is None:
-        raise NoUnitFree()
+def add_items(order, rec, unit):
+    """The order's lines for a recommendation, at today's prices (copied, so later price changes
+    don't touch the order). Used at checkout and when staff change the setup (A08)."""
     days = rec.price_breakdown.get("rental_days", 1)
-    subtotal = rec.quoted_price
-    discount = discount_for(subtotal, promo)
-    total = subtotal - discount
-
-    order = Order.objects.create(
-        customer=user, recommendation=rec, status=Order.Status.CONFIRMED,
-        start_date=start, end_date=end, delivery_address=address,
-        promo_code=promo, subtotal=subtotal, discount=discount, total=total)
-
-    b = rec.price_breakdown
     OrderItem.objects.create(
         order=order, kind=OrderItem.Kind.ROBOT, robot_model=rec.robot_model, fleet_unit=unit,
         description=rec.robot_model.name, quantity=days, unit_price=rec.robot_model.daily_rate)
@@ -157,7 +143,26 @@ def create_order(user, rec, address: str, promo, method: str = "card", reference
         OrderItem.objects.create(order=order, kind=OrderItem.Kind.SKILL_PACK, skill_pack=rec.skill_pack,
                                  description=f"{rec.skill_pack.name} skill pack", unit_price=rec.skill_pack.flat_fee)
     OrderItem.objects.create(order=order, kind=OrderItem.Kind.SERVICE, description="Delivery, setup and collection",
-                             unit_price=Decimal(str(b.get("delivery_and_setup", 0))))
+                             unit_price=Decimal(str(rec.price_breakdown.get("delivery_and_setup", 0))))
+
+
+def create_order(user, rec, address: str, promo, method: str = "card", reference: str = "") -> Order:
+    """Build the Order, its lines, a paid mock Payment and the first timeline event, and reserve a unit.
+    Must be called inside transaction.atomic()."""
+    start, end = booking_window(rec)
+    unit = free_units(rec.robot_model, start, end).first()
+    if unit is None:
+        raise NoUnitFree()
+    subtotal = rec.quoted_price
+    discount = discount_for(subtotal, promo)
+    total = subtotal - discount
+
+    order = Order.objects.create(
+        customer=user, recommendation=rec, status=Order.Status.CONFIRMED,
+        start_date=start, end_date=end, delivery_address=address,
+        promo_code=promo, subtotal=subtotal, discount=discount, total=total)
+
+    add_items(order, rec, unit)
 
     Payment.objects.create(order=order, method=method, amount=total, status=Payment.Status.PAID,
                            reference=reference, paid_at=timezone.now())

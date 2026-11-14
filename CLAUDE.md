@@ -25,6 +25,7 @@ Run Django commands from `source/src/botcierge/` (that is where `manage.py` is).
 pip install -r source\requirements.txt      # pinned; the joblib models need scikit-learn 1.9.1
 python manage.py migrate
 python manage.py seed_demo                  # catalogue, fleet, promo code, demo users (--reset to wipe catalogue first)
+python manage.py seed_review_orders         # 12 test orders (tester1-4 / testpass123) across task types and ship days for the A08 review queue (--reset to rebook)
 python manage.py runserver
 python manage.py test                       # all tests
 python manage.py test planner               # one app

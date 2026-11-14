@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Review before dispatch{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+  <h1 class="h4 mb-0">Review before dispatch</h1>
+  {% if first %}<a href="{% url 'staffpanel:review_detail' first.pk %}" class="btn bc-btn">Start reviewing &rarr;</a>{% endif %}
+</div>
+<p class="text-muted small">Check each paid order's plan before its robot ships. Soonest ship day first; within a day, the biggest orders first. An order can't be dispatched until it's approved.</p>
+
+<ul class="nav nav-tabs mb-3">
+  {% for code, label, n in tabs %}
+  <li class="nav-item"><a class="nav-link {% if code == state %}active{% endif %}" href="?show={{ code }}">{{ label }} <span class="badge text-bg-light border">{{ n }}</span></a></li>
+  {% endfor %}
+</ul>
+
+{% for label, orders in groups %}
+<h2 class="bc-section {% if not forloop.first %}mt-4{% endif %}">{{ label }} <small class="text-muted fw-normal">· {{ orders|length }} order{{ orders|length|pluralize }}</small></h2>
+{% for o in orders %}
+{% with rec=o.recommendation %}
+<div class="bc-card bc-row-link p-3 mb-2 position-relative {% if forloop.parentloop.first and forloop.first and state == 'pending' %}border-2 border-primary-subtle{% endif %}">
+  <div class="d-flex gap-3 align-items-center flex-wrap">
+    {% if rec.robot_model %}{% include "partials/robot_photo.html" with robot=rec.robot_model css="bc-frame-xs" %}{% endif %}
+    <div class="flex-grow-1">
+      <a href="{% url 'staffpanel:review_detail' o.pk %}" class="fw-semibold stretched-link text-reset text-decoration-none">
+        Order #{{ o.pk }} · {{ rec.task_request.spec.get_task_category_display }}</a>
+      <div class="small text-muted">{{ o.customer.get_full_name|default:o.customer.username }} · {{ rec.robot_model.name|default:"no robot" }} · {{ o.start_date|date:"j M" }} to {{ o.end_date|date:"j M" }}</div>
+      {% if o.flags %}<div class="mt-1">{% for f in o.flags %}<span class="badge text-bg-warning-subtle text-warning-emphasis border me-1">{{ f }}</span>{% endfor %}</div>{% endif %}
+      {% if o.review_note %}<div class="small mt-1"><span class="text-muted">Note:</span> {{ o.review_note|truncatechars:120 }}</div>{% endif %}
+    </div>
+    <div class="text-end fw-bold">S${{ o.total }}</div>
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+{% empty %}
+<div class="bc-card p-4 text-center text-muted">Nothing here right now.</div>
+{% endfor %}
+{% endblock %}

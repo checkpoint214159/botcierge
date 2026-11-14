@@ -8,7 +8,9 @@ from django.utils.text import slugify
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from catalog.taxonomy import PLATFORM_CHOICES, TASK_CATEGORY_CHOICES
 from config.form_mixins import BootstrapFormMixin
+from orders.forms import check_setup, skill_packs_for
 from orders.models import OrderItem
+from planner.decomposer import eligible_robots
 from orders.services import ONGOING  # orders that still hold their robot (until it's collected)
 
 
@@ -192,3 +194,21 @@ class SkillPackForm(CodeLockMixin, BootstrapFormMixin, forms.ModelForm):
         self.instance.task_categories = ",".join(self.cleaned_data["categories"])
         self.instance.default_conditioning = self.cleaned_data["conditioning"]
         return super().save(commit)
+
+
+class SetupOverrideForm(BootstrapFormMixin, forms.Form):
+    """A08: staff change the robot, attachments or skill pack of a paid order before dispatch.
+    Same choices and compatibility rules as the customer's booking page."""
+
+    robot = forms.ModelChoiceField(queryset=RobotModel.objects.none(), empty_label=None)
+    addons = forms.ModelMultipleChoiceField(queryset=AddOn.objects.filter(is_active=True), required=False,
+                                            widget=chips("Add an attachment…"), label="Attachments")
+    skill_pack = forms.ModelChoiceField(queryset=SkillPack.objects.none(), required=False, empty_label="No skill pack")
+
+    def __init__(self, *args, task_request, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["robot"].queryset = eligible_robots(task_request).order_by("daily_rate")
+        self.fields["skill_pack"].queryset = skill_packs_for(task_request.spec.task_category)
+
+    def clean(self):
+        return check_setup(self, super().clean())

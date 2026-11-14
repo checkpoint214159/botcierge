@@ -18,7 +18,7 @@
 <body class="d-flex flex-column min-vh-100">
 <nav class="navbar navbar-expand-lg bc-nav">
   <div class="container">
-    <a class="navbar-brand bc-brand" href="{% url 'catalog:home' %}">botcierge<span class="bc-dot">.</span></a>
+    <a class="navbar-brand bc-brand" href="{% if user.is_staff %}{% url 'staffpanel:dashboard' %}{% else %}{% url 'catalog:home' %}{% endif %}">botcierge<span class="bc-dot">.</span></a>
     {# Collapsed (narrow) navbar only: cart count beside the menu button, since the Orders menu is hidden behind it. #}
     {% if cart_count %}
     <a href="{% url 'orders:cart' %}" class="badge rounded-pill bg-danger text-decoration-none d-lg-none ms-auto me-2"
@@ -46,7 +46,7 @@
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Bookings</a>
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'staffpanel:order_list' %}">Orders</a></li>
-            <li><a class="dropdown-item" href="{% url 'staffpanel:request_list' %}">Plans and ML output</a></li>
+            <li><a class="dropdown-item" href="{% url 'staffpanel:review_list' %}">Review before dispatch</a></li>
           </ul>
         </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'staffpanel:ticket_list' %}">Support</a></li>

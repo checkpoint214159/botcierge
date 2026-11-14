@@ -4,6 +4,12 @@
 <a href="{% url 'staffpanel:order_list' %}" class="small">&larr; Orders</a>
 <h1 class="h3 mt-2 mb-1">Order #{{ order.pk }} <span class="badge bc-badge">{{ order.get_status_display }}</span></h1>
 <p class="text-muted">{{ order.customer.get_full_name|default:order.customer.username }} · {{ order.start_date|date:"j M Y" }} to {{ order.end_date|date:"j M Y" }} · {{ order.delivery_address }}</p>
+{% if order.status == "confirmed" %}
+<div class="alert {% if order.review_status == 'approved' %}alert-success{% else %}alert-warning{% endif %} small d-flex justify-content-between align-items-center">
+  <span>Review: <strong>{{ order.get_review_status_display }}</strong>{% if order.review_status != "approved" %} · approve it before dispatch{% endif %}</span>
+  <a href="{% url 'staffpanel:review_detail' order.pk %}">Open review</a>
+</div>
+{% endif %}
 <div class="row g-4">
   <div class="col-lg-6">
     <section class="bc-card p-4 mb-4">

@@ -40,6 +40,18 @@ class Order(models.Model):
     total = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Review(models.TextChoices):
+        """A08: staff check every paid order's plan before the robot is dispatched."""
+        PENDING = "pending", "To review"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Needs follow-up"
+
+    review_status = models.CharField(max_length=20, choices=Review.choices, default=Review.PENDING)
+    review_note = models.TextField(blank=True, help_text="Staff only. Why it needs follow-up, or what was changed.")
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="reviewed_orders")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
 

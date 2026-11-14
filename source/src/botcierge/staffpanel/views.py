@@ -4,6 +4,7 @@ Catalogue management (A03 robots, A04 fleet, A05 add-ons and skill packs) uses o
 a list page, a shared add/edit form page (staffpanel/form.html) and, where it makes sense, a POST-only
 switch to list or unlist an item. Nothing is ever deleted, because past orders point at these rows.
 """
+import json
 from datetime import timedelta
 
 from django.contrib import messages
@@ -16,11 +17,12 @@ from django.views.decorators.http import require_POST
 from catalog.checks import catalogue_issues
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from catalog.taxonomy import PLATFORM_CHOICES, TASK_CATEGORY_CHOICES
+from orders import review
 from orders.models import Order, OrderItem
-from orders.services import ONGOING, advance_order, assignable_units, next_status
+from orders.services import ONGOING, NoUnitFree, advance_order, assignable_units, next_status, order_summary
 from planner.ml_registry import coverage, learned_codes, model_cards
 
-from .forms import AddOnForm, FleetUnitForm, RobotModelForm, SkillPackForm
+from .forms import AddOnForm, FleetUnitForm, RobotModelForm, SetupOverrideForm, SkillPackForm
 
 staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url="accounts:login")
 
@@ -64,6 +66,9 @@ def order_detail(request, pk):
         elif action == "advance":
             if item.fleet_unit_id is None:
                 messages.error(request, "Assign a fleet unit before advancing the order.")
+            elif order.status == Order.Status.CONFIRMED and order.review_status != Order.Review.APPROVED:
+                # A08: the plan must be checked before the robot leaves the depot
+                messages.error(request, "Approve this order in the review queue before dispatching it.")
             elif advance_order(order, request.user, request.POST.get("note", "").strip()):
                 messages.success(request, f"Order moved to {order.get_status_display()}.")
         return redirect("staffpanel:order_detail", pk=order.pk)
@@ -76,8 +81,103 @@ def order_detail(request, pk):
 
 @staff_required
 def request_list(request):
-    # TODO(A08): TaskRequests with ML output, full policy_conditioning JSON, staff override.
-    return _todo(request, "A08", "Task requests & ML output")
+    """Old A08 placeholder URL: the review queue replaced it."""
+    return redirect("staffpanel:review_list")
+
+
+# ---------------------------------------------------------------- A08 review before dispatch
+
+REVIEW_TABS = [(Order.Review.PENDING, "To review"), (Order.Review.REJECTED, "Needs follow-up"),
+               (Order.Review.APPROVED, "Approved, not dispatched")]
+
+
+@staff_required
+def review_list(request):
+    """All orders waiting for a check, grouped by ship day, most expensive first within a day."""
+    state = request.GET.get("show", Order.Review.PENDING)
+    if state not in Order.Review.values:
+        state = Order.Review.PENDING
+    orders = review.review_queue(state)
+    for o in orders:
+        o.flags = review.risk_flags(o)
+    counts = {s: Order.objects.filter(status=Order.Status.CONFIRMED, review_status=s).count()
+              for s, _ in REVIEW_TABS}
+    return render(request, "staffpanel/review_list.html", {
+        "groups": review.grouped(orders), "first": orders[0] if orders else None,
+        "tabs": [(s, label, counts[s]) for s, label in REVIEW_TABS], "state": state})
+
+
+def _neighbours(order):
+    """Previous and next order in the same queue as this one (for the arrows)."""
+    queue = review.review_queue(order.review_status)
+    ids = [o.pk for o in queue]
+    if order.pk not in ids:
+        return None, None, ids
+    i = ids.index(order.pk)
+    return (queue[i - 1] if i > 0 else None), (queue[i + 1] if i + 1 < len(queue) else None), ids
+
+
+def _after_decision(request, order_pk, pending_ids):
+    """Go to the next order still to review, in queue order after the one just decided."""
+    left = [pk for pk in pending_ids if pk != order_pk]
+    later = pending_ids[pending_ids.index(order_pk) + 1:] if order_pk in pending_ids else []
+    nxt = next((pk for pk in later if pk in left), left[0] if left else None)
+    if nxt is None:
+        messages.success(request, "That was the last one. Nothing left to review.")
+        return redirect("staffpanel:review_list")
+    return redirect("staffpanel:review_detail", pk=nxt)
+
+
+@staff_required
+def review_detail(request, pk):
+    """One order at a time: the customer's request, what the models chose and why, the robot's config.
+    Approve, reject (needs follow-up) or change the setup. Arrow keys move through the queue."""
+    order = get_object_or_404(Order.objects.select_related("customer", "recommendation"), pk=pk)
+    rec = order.recommendation
+    tr = rec.task_request if rec else None
+    can_act = order.status == Order.Status.CONFIRMED and tr is not None
+    pending_ids = [o.pk for o in review.review_queue(Order.Review.PENDING)]
+
+    override = None
+    if can_act:
+        initial = {"robot": rec.robot_model, "addons": rec.addons.all(), "skill_pack": rec.skill_pack}
+        is_override = request.method == "POST" and request.POST.get("action") == "override"
+        override = SetupOverrideForm(request.POST if is_override else None, task_request=tr, initial=initial)
+
+    if request.method == "POST" and can_act:
+        action, note = request.POST.get("action"), request.POST.get("note", "").strip()
+        if action == "approve":
+            review.approve(order, request.user, note)
+            messages.success(request, f"Order #{order.pk} approved.")
+            return _after_decision(request, order.pk, pending_ids)
+        if action == "reject":
+            if not note:
+                messages.error(request, "Say what needs following up, so whoever emails the customer knows.")
+                return redirect("staffpanel:review_detail", pk=order.pk)
+            review.reject(order, request.user, note)
+            messages.warning(request, f"Order #{order.pk} marked as needing follow-up.")
+            return _after_decision(request, order.pk, pending_ids)
+        if action == "override" and override.is_valid():
+            d = override.cleaned_data
+            try:
+                review.staff_override(order, request.user, d["robot"], list(d["addons"]), d["skill_pack"])
+            except NoUnitFree:
+                override.add_error("robot", "No unit of that robot is free on these dates.")
+            else:
+                messages.success(request, "Setup changed. Check it, then approve.")
+                return redirect("staffpanel:review_detail", pk=order.pk)
+
+    prev_order, next_order, ids = _neighbours(order)
+    spec = tr.spec if tr else None
+    return render(request, "staffpanel/review_detail.html", {
+        "order": order, "rec": rec, "tr": tr, "spec": spec, "can_act": can_act, "override": override,
+        "flags": review.risk_flags(order), "summary": order_summary(order),
+        "history": tr.recommendations.select_related("robot_model", "skill_pack") if tr else [],
+        "conditioning": json.dumps(rec.policy_conditioning, indent=2) if rec else "",
+        "prev_order": prev_order, "next_order": next_order,
+        "position": ids.index(order.pk) + 1 if order.pk in ids else None, "queue_size": len(ids),
+        "state_label": order.get_review_status_display(),
+    })
 
 
 @staff_required
