@@ -21,7 +21,7 @@ def start(request):
             decompose(task_request)
             return redirect("planner:result", pk=task_request.pk)
     else:
-        initial = {}
+        initial = request.GET.dict()  # conveniently allow prefill, because why not
         if hasattr(request.user, "profile"):
             initial["housing_type"] = request.user.profile.housing_type
         form = TaskRequestForm(initial=initial)
@@ -30,6 +30,7 @@ def start(request):
 
 @login_required
 def result(request, pk):
+    # found at /plan/pk. we gotta match pk of result against the auth_user(id)
     """S07: show the decomposition and the recommended robot, add-ons, skill pack and quote."""
     task_request = get_object_or_404(TaskRequest, pk=pk, customer=request.user)
     rec = task_request.recommendations.first()  # newest first

@@ -1,4 +1,11 @@
+/*
+Colours and whatnot by claude
+why are the accents so close to each other or something
+*/
+
 :root {
+  --bc-text-on-ink: #fff;
+  --bc-muted: #6b6760;
   --bc-ink: #15171a;
   --bc-paper: #f6f4ef;
   --bc-card: #ffffff;
@@ -6,14 +13,39 @@
   --bc-accent-soft: #ffe9df;
   --bc-line: #e4e0d8;
 }
+
+/*adding this because my eyes hurt*/
+[data-bs-theme="dark"] {
+  --bc-text-on-ink: #121315;
+  --bc-muted: #9a958c;
+  --bc-ink: #ecebe7;
+  --bc-paper: #121315;
+  --bc-card: #1b1d20;
+  --bc-line: #2e3135;
+  --bc-accent: #ff6a33;
+  --bc-accent-soft: #3a2116;
+}
+
+
 body { background: var(--bc-paper); color: var(--bc-ink); font-family: "Inter", system-ui, sans-serif; }
 h1, h2, h3, .bc-display, .bc-brand { font-family: "Space Grotesk", sans-serif; letter-spacing: -0.01em; }
 a { color: var(--bc-ink); text-decoration-color: var(--bc-accent); }
 .bc-nav { background: var(--bc-paper); border-bottom: 1px solid var(--bc-line); }
 .bc-brand { font-weight: 700; font-size: 1.4rem; }
 .bc-dot { color: var(--bc-accent); }
-.bc-btn { background: var(--bc-ink); color: #fff; border: 0; }
-.bc-btn:hover { background: var(--bc-accent); color: #fff; }
+
+/*main button colors*/
+.bc-btn { color: var(--bc-text-on-ink); background: var(--bc-ink) }
+.bc-btn:hover { background: var(--bc-accent); color: var(--bc-text-on-ink); }
+
+/*secondary action button colours*/
+.bc-btn-outline {
+  color: var(--bc-ink);
+  border: 1px solid var(--bc-ink);
+}
+.bc-btn-outline:hover { background: var(--bc-ink); color: var(--bc-text-on-ink); }
+
+
 .bc-card { background: var(--bc-card); border: 1px solid var(--bc-line); border-radius: 14px; }
 a.bc-card:hover { border-color: var(--bc-ink); }
 .bc-badge { background: var(--bc-accent-soft); color: #a3330a; font-weight: 500; }
@@ -22,7 +54,8 @@ a.bc-card:hover { border-color: var(--bc-ink); }
 .bc-eyebrow { text-transform: uppercase; font-size: .78rem; letter-spacing: .08em; color: var(--bc-accent); font-weight: 600; }
 .bc-steps li { display: flex; gap: 1rem; padding: .9rem 0; border-bottom: 1px dashed var(--bc-line); }
 .bc-steps li:last-child { border-bottom: 0; }
-.bc-steps span { flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: var(--bc-ink); color: #fff;
+.bc-steps span { flex: 0 0 2rem; height: 2rem; border-radius: 50%;
+  background: var(--bc-ink); color: var(--bc-text-on-ink);
   display: grid; place-items: center; font-family: "Space Grotesk"; }
 .bc-section { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: #6b6760; margin-bottom: 1rem; }
 .bc-k { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: #8a857c; }
@@ -39,3 +72,22 @@ a.bc-card:hover { border-color: var(--bc-ink); }
 .bc-credit { font-size: .72rem; color: #8a857c; }
 .bc-credit a { color: inherit; }
 .bc-footer { border-top: 1px solid var(--bc-line); color: #6b6760; }
+
+.bc-frame {
+  aspect-ratio: 1/1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--bc-card);
+}
+
+.bc-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: .75rem;
+}
+
+.bc-frame.bc-frame-lg {aspect-ratio: 3/3; border-radius: 14px}
+.bc-frame.bc-frame-sm {width: 72px; flex: 0 0 72px; border-radius: 10px}

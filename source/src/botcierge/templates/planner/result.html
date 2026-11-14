@@ -30,7 +30,7 @@
       <h2 class="bc-section">Recommended setup</h2>
       {% if rec.robot_model %}
       <div class="d-flex gap-3 align-items-center">
-        {% include "partials/robot_photo.html" with robot=rec.robot_model css="bc-mini-photo" %}
+        {% include "partials/robot_photo.html" with robot=rec.robot_model css="bc-frame-sm" %}
         <div>
           <a href="{% url 'catalog:robot_detail' rec.robot_model.slug %}" class="h5 d-block mb-0">{{ rec.robot_model.manufacturer }} {{ rec.robot_model.name }}</a>
           <small class="text-muted">{{ rec.robot_model.get_platform_display }} · {% widthratio rec.platform_confidence 1 100 %}% match</small>

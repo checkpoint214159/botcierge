@@ -17,7 +17,7 @@
   {% for r in robots %}
   <div class="col-md-6 col-lg-4">
     <a class="bc-card d-block h-100 overflow-hidden text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
-      {% include "partials/robot_photo.html" with robot=r css="bc-thumb" %}
+      {% include "partials/robot_photo.html" with robot=r css="bc-frame" %}
       <div class="p-3">
       <div class="d-flex justify-content-between"><span class="badge bc-badge">{{ r.get_platform_display }}</span>
         {% if r.avg_rating %}<small>★ {{ r.avg_rating|floatformat:1 }}</small>{% endif %}</div>

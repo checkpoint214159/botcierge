@@ -1,5 +1,11 @@
 {% load static %}<!doctype html>
-<html lang="en">
+
+<html lang="en" data-bs-theme="light">
+  <script>
+    const saved = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.bsTheme = saved || (prefersDark ? "dark" : "light");
+  </script>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +28,13 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'planner:my_plans' %}">My plans</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'orders:order_list' %}">Orders</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'support:ticket_list' %}">Support</a></li>
+        <li class="nav-item">
+          <button class = "btn btn-link nav-link" type="button" onclick="
+            const t = document.documentElement.dataset.bsTheme === 'dark' ? 'light' : 'dark'
+            document.documentElement.dataset.bsTheme = t;localStorage.setItem('theme', t);">
+            mm dark mode
+          </button>
+        </li>
         {% endif %}
       </ul>
       <ul class="navbar-nav">

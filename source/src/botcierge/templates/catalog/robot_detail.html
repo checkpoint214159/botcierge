@@ -5,7 +5,7 @@
 <div class="row g-4 mt-1">
   <div class="col-lg-7">
     <figure class="mb-3">
-      {% include "partials/robot_photo.html" with robot=robot css="bc-hero-photo" %}
+      {% include "partials/robot_photo.html" with robot=robot css="bc-frame-lg" %}
       {% if robot.image_credit %}<figcaption class="bc-credit mt-1">
         {% if robot.image_credit_url %}<a href="{{ robot.image_credit_url }}" target="_blank" rel="noopener">{{ robot.image_credit }}</a>{% else %}{{ robot.image_credit }}{% endif %}
       </figcaption>{% endif %}

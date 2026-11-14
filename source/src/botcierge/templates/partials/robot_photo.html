@@ -1,6 +1,8 @@
 {# Robot photo with a placeholder when the robot has none. Usage: {% include "partials/robot_photo.html" with robot=r css="bc-thumb" %} #}
 {% if robot.image_url %}
-<img src="{{ robot.image_url }}" alt="{{ robot.manufacturer }} {{ robot.name }}" class="{{ css }}" loading="lazy">
+<div class="bc-frame {{ css }}">
+    <img src="{{ robot.image_url }}" alt="{{ robot.manufacturer }} {{ robot.name }}"  loading="lazy">
+</div>
 {% else %}
 <div class="{{ css }} bc-photo-placeholder">{{ robot.get_platform_display }}</div>
 {% endif %}

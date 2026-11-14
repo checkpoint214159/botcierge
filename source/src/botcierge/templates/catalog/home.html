@@ -8,7 +8,7 @@
       <h1 class="bc-display mb-3">Tell us the chore.<br>We send the right robot.</h1>
       <p class="lead text-muted mb-4">Describe the job in your own words, add your floor plan, budget and deadline. We work out the robot, the attachments and the skill it needs, then deliver and run it for you.</p>
       <a href="{% url 'planner:start' %}" class="btn bc-btn btn-lg me-2">Plan a task</a>
-      <a href="{% url 'catalog:robot_list' %}" class="btn btn-outline-dark btn-lg">Browse robots</a>
+      <a href="{% url 'catalog:robot_list' %}" class="btn bc-btn-outline-dark btn-lg">Browse robots</a>
     </div>
     <div class="col-lg-5">
       <ol class="bc-steps list-unstyled mb-0">
@@ -25,7 +25,7 @@
   {% for r in featured %}
   <div class="col-sm-6 col-lg-3">
     <a class="bc-card d-block h-100 overflow-hidden text-decoration-none text-reset" href="{% url 'catalog:robot_detail' r.slug %}">
-      {% include "partials/robot_photo.html" with robot=r css="bc-thumb" %}
+      {% include "partials/robot_photo.html" with robot=r css="bc-frame {{css}}" %}
       <div class="p-3">
         <span class="badge bc-badge mb-2">{{ r.get_platform_display }}</span>
         <h3 class="h6 mb-1">{{ r.manufacturer }} {{ r.name }}</h3>
