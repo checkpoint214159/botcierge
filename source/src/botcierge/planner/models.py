@@ -21,6 +21,8 @@ class TaskRequest(models.Model):
 
     # space
     floor_plan = models.ImageField(upload_to="floorplans/", blank=True)
+    address = models.ForeignKey("accounts.Address", on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="task_requests", help_text="Where the robot is delivered (set on the booking page)")
     housing_type = models.CharField(max_length=20, default="hdb")
     area_m2 = models.DecimalField(max_digits=7, decimal_places=1)
     num_rooms = models.PositiveSmallIntegerField(default=1)

@@ -1,27 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Booking cart{% endblock %}
+{% block title %}Cart{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">Booking cart</h1>
-{% if not rec %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Cart</h1>
+  <a class="btn bc-btn-outline" href="{% url 'planner:start' %}">Plan another task</a>
+</div>
+
+{% if not ready and not incomplete %}
 <div class="bc-card p-4 text-center">
-  <p class="text-muted">Your cart is empty.</p>
-  <a href="{% url 'planner:my_plans' %}" class="btn bc-btn">Choose a saved plan</a>
+  <p class="text-muted">Nothing waiting to be booked.</p>
+  <a href="{% url 'planner:start' %}" class="btn bc-btn">Plan a task</a>
+  <a href="{% url 'planner:my_plans' %}" class="btn btn-link">See all my plans</a>
 </div>
-{% else %}
-<div class="bc-card p-4">
-  <h2 class="h5">{{ tr.title|default:"Your plan" }}</h2>
-  <p class="small text-muted mb-2">{{ rec.robot_model.name|default:"No robot" }}
-    · {{ start|date:"j M Y" }} to {{ end|date:"j M Y" }} ({{ days }} day{{ days|pluralize }})</p>
-  <div class="mb-2">{% for a in rec.addons.all %}<span class="badge text-bg-light border me-1">{{ a.name }}</span>{% endfor %}
-    {% if rec.skill_pack %}<span class="badge text-bg-light border">{{ rec.skill_pack.name }}</span>{% endif %}</div>
-  {% for p in problems %}<div class="alert alert-warning small">{{ p }}</div>
-  {% empty %}<p class="small text-success">{{ n_free }} unit{{ n_free|pluralize }} free on your dates.</p>{% endfor %}
-  <div class="fw-bold mb-3">Total S${{ rec.quoted_price }}</div>
-  <div class="d-flex gap-2">
-    {% if can_checkout %}<a href="{% url 'orders:checkout' %}" class="btn bc-btn">Checkout</a>{% endif %}
-    <a href="{% url 'planner:swap' tr.pk %}" class="btn btn-outline-dark">Change setup</a>
-    <form method="post" action="{% url 'orders:cart_remove' %}">{% csrf_token %}<button class="btn btn-link text-danger">Remove</button></form>
-  </div>
-</div>
+{% endif %}
+
+{% if ready %}
+<h2 class="bc-section mt-2">Ready to check out</h2>
+{% for row in ready %}{% include "orders/_cart_row.html" %}{% endfor %}
+{% endif %}
+
+{% if incomplete %}
+<h2 class="bc-section mt-4">Needs a few more details</h2>
+{% for row in incomplete %}{% include "orders/_cart_row.html" %}{% endfor %}
 {% endif %}
 {% endblock %}

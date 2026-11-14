@@ -1,0 +1,28 @@
+{# One plan in the cart. Expects `row` = {tr, rec, start, end, problems}. #}
+<div class="bc-card p-3 mb-3">
+  <div class="d-flex gap-3 align-items-center flex-wrap">
+    {% if row.rec.robot_model %}{% include "partials/robot_photo.html" with robot=row.rec.robot_model css="bc-frame-sm" %}{% endif %}
+    <div class="flex-grow-1">
+      <a href="{% url 'planner:result' row.tr.pk %}" class="fw-semibold">{{ row.tr.title|default:row.tr.description|truncatechars:60 }}</a>
+      <div class="small text-muted">
+        {{ row.rec.robot_model.name|default:"No robot" }} ·
+        {{ row.start|date:"j M" }} to {{ row.end|date:"j M Y" }} ·
+        {% if row.tr.address %}{{ row.tr.address.label }}{% else %}no address yet{% endif %}
+      </div>
+      {% if row.problems %}
+      <ul class="small text-danger mb-0 mt-1 ps-3">{% for p in row.problems %}<li>{{ p }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+    <div class="text-end">
+      <div class="fw-bold">S${{ row.rec.quoted_price }}</div>
+      {% if "delivery_and_setup" not in row.rec.price_breakdown %}<div class="small text-muted">+ delivery</div>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 justify-content-end mt-2">
+    <form method="post" action="{% url 'orders:cart_remove' row.tr.pk %}">{% csrf_token %}
+      <button class="btn btn-link btn-sm text-danger">Remove</button></form>
+    <a href="{% url 'orders:booking' row.tr.pk %}" class="btn btn-sm {% if row.problems %}bc-btn{% else %}bc-btn-outline{% endif %}">
+      {% if row.problems %}Finish booking{% else %}Edit{% endif %}</a>
+    {% if not row.problems %}<a href="{% url 'orders:checkout' row.tr.pk %}" class="btn btn-sm bc-btn">Check out</a>{% endif %}
+  </div>
+</div>

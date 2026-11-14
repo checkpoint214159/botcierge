@@ -2,9 +2,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .decomposer import CATEGORY_CONFIDENCE_FLOOR, decompose, save_customer_edit
-from .forms import SwapForm, TaskRequestForm
+from orders.models import Order
+
+from .decomposer import CATEGORY_CONFIDENCE_FLOOR, decompose
+from .forms import TaskRequestForm
 from .models import TaskRequest
+from .pricing import rec_quote_lines
 
 
 @login_required
@@ -17,6 +20,8 @@ def start(request):
             task_request.customer = request.user
             if not form.cleaned_data.get("housing_type") and hasattr(request.user, "profile"):
                 task_request.housing_type = request.user.profile.housing_type
+            # price delivery straight away if the customer has a default address (changeable at booking)
+            task_request.address = request.user.addresses.filter(is_default=True).first()
             task_request.save()
             decompose(task_request)
             return redirect("planner:result", pk=task_request.pk)
@@ -38,21 +43,15 @@ def result(request, pk):
     if rec is None or spec is None:
         messages.warning(request, "We could not build a plan for this request yet.")
         return redirect("planner:start")
-    b = rec.price_breakdown
-    days = b.get("rental_days", 1)
-    lines = []
-    if rec.robot_model:
-        lines.append((f"{rec.robot_model.name} × {days} day(s)", b.get("robot", 0)))
-    for a in rec.addons.all():
-        lines.append((f"{a.name} × {days} day(s)", b.get(f"addon:{a.code}", 0)))
-    if rec.skill_pack:
-        lines.append((f"{rec.skill_pack.name} skill pack", b.get("skill_pack", 0)))
-    lines.append(("Delivery, setup and collection", b.get("delivery_and_setup", 0)))
+    order = None
+    if task_request.status == TaskRequest.Status.BOOKED:
+        order = Order.objects.filter(recommendation__task_request=task_request, customer=request.user).first()
     return render(request, "planner/result.html", {
         "tr": task_request,
         "spec": spec,
         "rec": rec,
-        "lines": lines,
+        "lines": rec_quote_lines(rec),
+        "order": order,
         "low_confidence": spec.category_confidence < CATEGORY_CONFIDENCE_FLOOR,
         "reasons": explain(task_request, spec, rec),
     })
@@ -63,7 +62,7 @@ def explain(tr, spec, rec):
     staff-only policy_conditioning JSON."""
     reasons = []
     if rec.source == rec.Source.CUSTOMER:
-        reasons.append("You changed the robot or attachments, so this setup is your own choice.")
+        reasons.append("You changed the robot, attachments or skill pack, so this setup is your own choice.")
     if rec.robot_model:
         reasons.append(
             f"{rec.robot_model.name} is the lowest-priced {rec.robot_model.get_platform_display().lower()} "
@@ -86,26 +85,12 @@ def explain(tr, spec, rec):
 
 
 @login_required
-def swap(request, pk):
-    """S08: swap the robot or add-ons; the quote is recomputed and saved as source=CUSTOMER."""
-    task_request = get_object_or_404(TaskRequest, pk=pk, customer=request.user)
-    rec = task_request.recommendations.first()
-    if rec is None or not hasattr(task_request, "spec"):
-        return redirect("planner:start")
-    if request.method == "POST":
-        form = SwapForm(request.POST, task_request=task_request)
-        if form.is_valid():
-            save_customer_edit(rec, form.cleaned_data["robot"], list(form.cleaned_data["addons"]))
-            messages.success(request, "Your changes are saved and the quote is updated.")
-            return redirect("planner:result", pk=task_request.pk)
-    else:
-        form = SwapForm(task_request=task_request,
-                        initial={"robot": rec.robot_model, "addons": rec.addons.all()})
-    return render(request, "planner/swap.html", {"tr": task_request, "rec": rec, "form": form})
-
-
-@login_required
 def my_plans(request):
     """S15: list of the customer's saved task plans."""
-    plans = TaskRequest.objects.filter(customer=request.user).select_related("spec")
+    plans = list(TaskRequest.objects.filter(customer=request.user).select_related("spec"))
+    # booked plans link to their order instead of offering to book again
+    orders = dict(Order.objects.filter(customer=request.user, recommendation__isnull=False)
+                  .values_list("recommendation__task_request_id", "pk"))
+    for p in plans:
+        p.order_id = orders.get(p.pk)
     return render(request, "planner/my_plans.html", {"plans": plans})

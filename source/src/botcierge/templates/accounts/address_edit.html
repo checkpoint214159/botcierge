@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ address.label }}{% endblock %}
+{% block content %}
+<a href="{% url 'accounts:addresses' %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="small">&larr; All addresses</a>
+<div class="row justify-content-center mt-2"><div class="col-md-6">
+  <div class="bc-card p-4">
+    <h1 class="h4 mb-3">Edit {{ address.label }}</h1>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+      <button class="btn bc-btn w-100">Save</button>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

@@ -75,24 +75,7 @@ class PlannerViewTests(TestCase):
         self.assertEqual(self.client.get(reverse("staffpanel:dashboard")).status_code, 302)
 
 
-class SwapTests(PlannerFixtureMixin, TestCase):
-    """S08 / S17: customer swaps are saved as new CUSTOMER recommendations."""
-
-    def test_swap_saves_customer_rec_and_requotes(self):
-        from .models import Recommendation
-        ml_rec = decompose(self.make_request())
-        from .forms import SwapForm
-        allowed = SwapForm(task_request=ml_rec.task_request).fields["robot"].queryset
-        other = allowed.exclude(pk=ml_rec.robot_model_id).first()
-        self.assertIsNotNone(other)
-        self.client.login(username="demo", password="demopass123")
-        url = reverse("planner:swap", args=[ml_rec.task_request.pk])
-        resp = self.client.post(url, {"robot": other.pk})
-        self.assertRedirects(resp, reverse("planner:result", args=[ml_rec.task_request.pk]))
-        newest = ml_rec.task_request.recommendations.first()
-        self.assertEqual(newest.source, Recommendation.Source.CUSTOMER)
-        self.assertEqual(newest.robot_model, other)
-        self.assertEqual(ml_rec.task_request.recommendations.count(), 2)
+class ResultPageTests(PlannerFixtureMixin, TestCase):
 
     def test_result_page_shows_reasons(self):
         rec = decompose(self.make_request())
@@ -100,3 +83,28 @@ class SwapTests(PlannerFixtureMixin, TestCase):
         resp = self.client.get(reverse("planner:result", args=[rec.task_request.pk]))
         self.assertContains(resp, "Why this setup")
         self.assertNotContains(resp, "policy_conditioning")
+        self.assertContains(resp, "Customise and book")
+
+
+class PricingTests(PlannerFixtureMixin, TestCase):
+    """Delivery is priced by postal zone, and only once we know the address."""
+
+    def test_zones_from_postal_sector(self):
+        from .pricing import zone_for
+        self.assertEqual(zone_for("640123"), "west")     # Jurong West
+        self.assertEqual(zone_for("730001"), "north")    # Woodlands
+        self.assertEqual(zone_for("238801"), "central")  # Orchard
+        self.assertEqual(zone_for("520123"), "east")     # Tampines
+        self.assertIsNone(zone_for("740000"))            # sector 74 doesn't exist
+        self.assertIsNone(zone_for("12345"))
+
+    def test_no_address_means_no_delivery_line(self):
+        rec = decompose(self.make_request())
+        self.assertNotIn("delivery_and_setup", rec.price_breakdown)
+
+    def test_default_address_prices_delivery(self):
+        from accounts.models import Address
+        address = Address.objects.get(customer=self.user)  # seeded Jurong West address
+        rec = decompose(self.make_request(address=address))
+        self.assertEqual(rec.price_breakdown["delivery_zone"], "west")
+        self.assertEqual(rec.price_breakdown["delivery_and_setup"], 29.0)

@@ -4,7 +4,9 @@ from django.contrib.auth.models import User
 
 from config.form_mixins import BootstrapFormMixin
 
-from .models import CustomerProfile
+from planner.pricing import zone_for
+
+from .models import Address, CustomerProfile
 
 
 class RegisterForm(BootstrapFormMixin, UserCreationForm):
@@ -34,4 +36,19 @@ class ProfileForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = CustomerProfile
-        fields = ["phone", "address", "postal_code", "housing_type", "household_size"]
+        fields = ["phone", "housing_type", "household_size"]  # addresses have their own page (S19)
+
+
+class AddressForm(BootstrapFormMixin, forms.ModelForm):
+    """S19: add or edit a saved delivery address."""
+
+    class Meta:
+        model = Address
+        fields = ["label", "line", "unit", "postal_code", "is_default"]
+        labels = {"is_default": "Use as my default address"}
+
+    def clean_postal_code(self):
+        code = self.cleaned_data["postal_code"].strip()
+        if zone_for(code) is None:
+            raise forms.ValidationError("That isn't a Singapore postal code we deliver to.")
+        return code

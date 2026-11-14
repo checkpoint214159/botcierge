@@ -12,8 +12,16 @@
     <tr><td>{{ p.title|default:p.description|truncatechars:50 }}</td>
       <td>{{ p.spec.get_task_category_display|default:"-" }}</td>
       <td class="small">{{ p.start_date|date:"j M" }} to {{ p.deadline_date|date:"j M" }}</td>
-      <td><span class="badge bc-badge">{{ p.get_status_display }}</span></td>
-      <td class="text-end"><a href="{% url 'planner:result' p.pk %}">View</a></td></tr>
+      <td><span class="badge bc-badge">{% if p.status == "planned" %}In cart{% elif p.status == "draft" %}Saved{% else %}{{ p.get_status_display }}{% endif %}</span></td>
+      <td class="text-end text-nowrap">
+        <a href="{% url 'planner:result' p.pk %}">View</a>
+        {% if p.order_id %} · <a href="{% url 'orders:order_detail' p.order_id %}">Order #{{ p.order_id }}</a>
+        {% elif p.status == "planned" %} · <a href="{% url 'orders:booking' p.pk %}">Book</a>
+        {% elif p.status == "draft" and p.spec %}
+          <form method="post" action="{% url 'orders:cart_restore' p.pk %}" class="d-inline">{% csrf_token %}
+            · <button class="btn btn-link btn-sm p-0 align-baseline">Add to cart</button></form>
+        {% endif %}
+      </td></tr>
   {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">No plans yet.</td></tr>{% endfor %}
   </tbody>
 </table>

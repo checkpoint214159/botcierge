@@ -1,11 +1,14 @@
-"""Booking rules shared by the cart (S09) and checkout (S10)."""
+"""Booking rules shared by the booking page (S08/S09), the cart and checkout (S10)."""
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from django.db.models import Q
+from django.db import transaction
 from django.utils import timezone
 
 from catalog.models import FleetUnit
+from planner.decomposer import requote, save_customer_edit
+from planner.models import TaskRequest
+from planner.pricing import build_quote, quote_lines
 
 from .models import Order, OrderItem, OrderStatusEvent, Payment, PromoCode
 
@@ -14,10 +17,12 @@ UNBOOKABLE = [FleetUnit.Status.MAINTENANCE, FleetUnit.Status.RETIRED]
 INACTIVE_ORDERS = [Order.Status.CANCELLED]
 
 
+def window_from(start: date, days: int) -> tuple[date, date]:
+    return start, start + timedelta(days=days - 1)
+
+
 def booking_window(rec) -> tuple[date, date]:
-    tr = rec.task_request
-    days = rec.price_breakdown.get("rental_days", 1)
-    return tr.start_date, tr.start_date + timedelta(days=days - 1)
+    return window_from(rec.task_request.start_date, rec.price_breakdown.get("rental_days", 1))
 
 
 def free_units(robot_model, start: date, end: date):
@@ -45,6 +50,71 @@ def discount_for(subtotal: Decimal, promo) -> Decimal:
     if promo is None:
         return Decimal("0.00")
     return (subtotal * promo.percent_off / 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def booking_problems(tr, rec) -> list[str]:
+    """Everything still stopping this booking from going to checkout. Empty list = ready.
+    The booking page, the cart and checkout all use this, so they never disagree."""
+    if rec is None or rec.robot_model is None:
+        return ["No robot in the fleet fits this plan yet, so it can't be booked."]
+    problems = []
+    start, end = booking_window(rec)
+    if start < timezone.localdate():
+        problems.append("Your start date has passed. Pick a new date.")
+    if tr.address_id is None:
+        problems.append("Choose a delivery address.")
+    if not tr.floor_plan:
+        problems.append("Upload a floor plan or a photo of the space.")
+    if not free_units(rec.robot_model, start, end).exists():
+        problems.append(f"No {rec.robot_model.name} is free from {start:%d %b} to {end:%d %b}. "
+                        "Try other dates or another robot.")
+    return problems
+
+
+def preview_booking(tr, robot, addons, skill_pack, start: date, address) -> dict:
+    """Price and availability for choices the customer has not saved yet (live sidebar).
+    Writes nothing to the database."""
+    days = tr.spec.est_days_needed
+    total, breakdown = build_quote(robot, addons, skill_pack, days, address.postal_code if address else None)
+    start, end = window_from(start, days)
+    n_free = free_units(robot, start, end).count() if robot else 0
+    return {
+        "lines": [{"label": label, "amount": amount}
+                  for label, amount in quote_lines(breakdown, robot, addons, skill_pack)],
+        "total": f"{total:.2f}",
+        "delivery_priced": "delivery_and_setup" in breakdown,
+        "within_budget": total <= tr.budget_sgd,
+        "budget": f"{tr.budget_sgd:.2f}",
+        "start": start.strftime("%d %b %Y"),
+        "end": end.strftime("%d %b %Y"),
+        "days": days,
+        "units_free": n_free,
+    }
+
+
+@transaction.atomic
+def save_booking(tr, rec, data) -> tuple:
+    """Save the booking page. Returns (current recommendation, setup_changed).
+
+    Task details (dates, address, floor plan) are saved on the TaskRequest. If the robot,
+    add-ons or skill pack changed, that is a customer edit of the ML output and gets its own
+    Recommendation row (S08). Otherwise the existing one is only re-priced.
+    """
+    shift = data["start_date"] - tr.start_date
+    tr.start_date += shift
+    tr.deadline_date += shift  # keep the same window length
+    tr.address = data["address"]
+    if data.get("floor_plan"):
+        tr.floor_plan = data["floor_plan"]
+    tr.status = TaskRequest.Status.PLANNED  # saving puts a removed plan back in the cart
+    tr.save()
+
+    robot, addons, skill_pack = data["robot"], list(data["addons"]), data["skill_pack"]
+    setup_changed = (robot != rec.robot_model or skill_pack != rec.skill_pack
+                     or {a.pk for a in addons} != set(rec.addons.values_list("pk", flat=True)))
+    if setup_changed:
+        return save_customer_edit(rec, robot, addons, skill_pack), True
+    return requote(rec), False
 
 
 class NoUnitFree(Exception):

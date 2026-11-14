@@ -19,30 +19,63 @@
 <nav class="navbar navbar-expand-lg bc-nav">
   <div class="container">
     <a class="navbar-brand bc-brand" href="{% url 'catalog:home' %}">botcierge<span class="bc-dot">.</span></a>
+    {# Collapsed (narrow) navbar only: cart count beside the menu button, since the Orders menu is hidden behind it. #}
+    {% if cart_count %}
+    <a href="{% url 'orders:cart' %}" class="badge rounded-pill bg-danger text-decoration-none d-lg-none ms-auto me-2"
+       aria-label="Cart: {{ cart_count }} plans waiting">{{ cart_count }}</a>
+    {% endif %}
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="nav">
+      {# Grouped by app: robots = catalog, plans = planner, orders = orders + support. #}
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'catalog:robot_list' %}">Robots</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'planner:start' %}">Plan a task</a></li>
-        {% if user.is_authenticated %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'planner:my_plans' %}">My plans</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'orders:order_list' %}">Orders</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'support:ticket_list' %}">Support</a></li>
-        <li class="nav-item">
-          <button class = "btn btn-link nav-link" type="button" onclick="
-            const t = document.documentElement.dataset.bsTheme === 'dark' ? 'light' : 'dark'
-            document.documentElement.dataset.bsTheme = t;localStorage.setItem('theme', t);">
-            mm dark mode
-          </button>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Robots</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'catalog:robot_list' %}">All robots</a></li>
+            <li><a class="dropdown-item" href="{% url 'catalog:robot_list' %}?outdoor=1">Indoor + outdoor robots</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Plans</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'planner:start' %}">Plan a new task</a></li>
+            {% if user.is_authenticated %}<li><a class="dropdown-item" href="{% url 'planner:my_plans' %}">My plans</a></li>{% endif %}
+          </ul>
+        </li>
+        {% if user.is_authenticated and not user.is_staff %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Orders
+            {% if cart_count %}<span class="badge rounded-pill bg-danger ms-1">{{ cart_count }}<span class="visually-hidden"> plans in cart</span></span>{% endif %}
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item d-flex justify-content-between align-items-center gap-3" href="{% url 'orders:cart' %}">Cart
+              {% if cart_count %}<span class="badge rounded-pill bg-danger">{{ cart_count }}</span>{% endif %}</a></li>
+            <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">My orders</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'support:ticket_list' %}">Support</a></li>
+          </ul>
         </li>
         {% endif %}
       </ul>
-      <ul class="navbar-nav">
+      <ul class="navbar-nav align-items-lg-center">
+        <li class="nav-item">
+          <button class="btn btn-link nav-link" type="button" id="theme-toggle" aria-label="Toggle dark mode" onclick="
+            const t = document.documentElement.dataset.bsTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.dataset.bsTheme = t; localStorage.setItem('theme', t);
+            this.textContent = t === 'dark' ? '☀ Light' : '☾ Dark';">&#9790; Dark</button>
+        </li>
         {% if user.is_authenticated %}
           {% if user.is_staff %}<li class="nav-item"><a class="nav-link fw-semibold" href="{% url 'staffpanel:dashboard' %}">Staff panel</a></li>{% endif %}
-          <li class="nav-item"><a class="nav-link text-muted" href="{% url 'accounts:profile' %}">Hi, {{ user.first_name|default:user.username }}</a></li>
-          <li class="nav-item">
-            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-link nav-link">Log out</button></form>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ user.first_name|default:user.username }}</a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              {% if not user.is_staff %}
+              <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
+              <li><a class="dropdown-item" href="{% url 'accounts:addresses' %}">Delivery addresses</a></li>
+              <li><hr class="dropdown-divider"></li>
+              {% endif %}
+              <li><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="dropdown-item">Log out</button></form></li>
+            </ul>
           </li>
         {% else %}
           <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Log in</a></li>
@@ -67,5 +100,8 @@
   </div>
 </footer>
 <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<script>
+  if (document.documentElement.dataset.bsTheme === "dark") document.getElementById("theme-toggle").textContent = "☀ Light";
+</script>
 </body>
 </html>

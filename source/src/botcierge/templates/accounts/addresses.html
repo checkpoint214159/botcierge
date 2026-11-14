@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Delivery addresses{% endblock %}
+{% block content %}
+{% if next %}<a href="{{ next }}" class="small">&larr; Back to your booking</a>{% else %}<a href="{% url 'accounts:profile' %}" class="small">&larr; My profile</a>{% endif %}
+<h1 class="h3 mt-2 mb-3">Delivery addresses</h1>
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% for a in addresses %}
+    <div class="bc-card p-3 mb-2 d-flex justify-content-between align-items-center gap-3">
+      <div>
+        <strong>{{ a.label }}</strong>{% if a.is_default %} <span class="badge bc-badge">Default</span>{% endif %}
+        <div class="small text-muted">{{ a.one_line }}</div>
+      </div>
+      <div class="d-flex gap-2 align-items-center text-nowrap">
+        {% if not a.is_default %}
+        <form method="post" action="{% url 'accounts:address_default' a.pk %}">{% csrf_token %}<button class="btn btn-link btn-sm p-0">Make default</button></form>
+        {% endif %}
+        <a href="{% url 'accounts:address_edit' a.pk %}{% if next %}?next={{ next|urlencode }}{% endif %}" class="btn btn-link btn-sm p-0">Edit</a>
+        <form method="post" action="{% url 'accounts:address_delete' a.pk %}" onsubmit="return confirm('Delete {{ a.label|escapejs }}?');">{% csrf_token %}
+          <button class="btn btn-link btn-sm p-0 text-danger">Delete</button></form>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">No saved addresses yet.</p>
+    {% endfor %}
+  </div>
+  <div class="col-lg-5">
+    <div class="bc-card p-4">
+      <h2 class="bc-section">Add an address</h2>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+        <button class="btn bc-btn w-100">Save address</button>
+      </form>
+      <p class="small text-muted mt-2 mb-0">Delivery is priced by zone from our Jurong West depot.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

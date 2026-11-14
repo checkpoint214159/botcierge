@@ -1,26 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Checkout{% endblock %}
 {% block content %}
-<h1 class="h3 mb-3">Checkout</h1>
+<a href="{% url 'orders:booking' tr.pk %}" class="small">&larr; Back to booking</a>
+<h1 class="h3 mt-2 mb-3">Checkout</h1>
 <div class="row g-4">
   <div class="col-lg-7">
-    <div class="bc-card p-4">
+    <section class="bc-card p-4 mb-4">
+      <h2 class="bc-section">Booking</h2>
+      <p class="mb-1"><strong>{{ tr.title|default:tr.description|truncatechars:70 }}</strong></p>
+      <p class="small text-muted mb-1">{{ rec.robot_model.manufacturer }} {{ rec.robot_model.name }}
+        · {{ start|date:"j M Y" }} to {{ end|date:"j M Y" }}</p>
+      <p class="small text-muted mb-0">Delivering to {{ tr.address.one_line }}</p>
+    </section>
+
+    {# Applying a promo only previews the discount, so it is a GET form. Paying is the POST below. #}
+    <section class="bc-card p-4 mb-4">
+      <h2 class="bc-section">Promo code</h2>
+      <form method="get" class="d-flex gap-2">
+        <input class="form-control" name="promo" value="{{ promo_entered }}" placeholder="Enter a code" aria-label="Promo code">
+        <button class="btn bc-btn-outline">Apply</button>
+      </form>
+      {% if promo %}<p class="small text-success mt-2 mb-0">{{ promo.code }} applied: {{ promo.percent_off }}% off.</p>
+      {% elif promo_error %}<p class="small text-danger mt-2 mb-0">{{ promo_error }}</p>{% endif %}
+      {% if available_promos and not promo %}
+      <p class="small text-muted mt-2 mb-0">Available:
+        {% for p in available_promos %}<a href="?promo={{ p.code }}" class="badge bc-badge text-decoration-none">{{ p.code }} · {{ p.percent_off }}% off</a> {% endfor %}</p>
+      {% endif %}
+    </section>
+
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Payment</h2>
       <form method="post">{% csrf_token %}
-        {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+        {% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}{% include "partials/field.html" %}{% endif %}{% endfor %}
         <button class="btn bc-btn w-100">Pay S${{ total }}</button>
       </form>
-    </div>
+    </section>
   </div>
   <div class="col-lg-5">
-    <div class="bc-card p-4">
+    <aside class="bc-card bc-rec p-4 bc-sticky">
       <h2 class="bc-section">Order summary</h2>
       <table class="table table-sm small mb-0">
+        {% for label, amount in lines %}<tr><td>{{ label }}</td><td class="text-end">S${{ amount|floatformat:2 }}</td></tr>{% endfor %}
         <tr><td>Subtotal</td><td class="text-end">S${{ subtotal }}</td></tr>
-        {% if discount %}<tr><td>Promo discount</td><td class="text-end">-S${{ discount }}</td></tr>{% endif %}
+        {% if discount %}<tr class="text-success"><td>Promo {{ promo.code }}</td><td class="text-end">-S${{ discount }}</td></tr>{% endif %}
         <tr class="fw-bold"><td>Total</td><td class="text-end">S${{ total }}</td></tr>
       </table>
-      <p class="small text-muted mt-2 mb-0">Promo codes are applied when you pay.</p>
-    </div>
+    </aside>
   </div>
 </div>
 {% endblock %}

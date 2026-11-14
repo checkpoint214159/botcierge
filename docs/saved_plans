@@ -1,0 +1,3 @@
+here is a saved plan you can paste as GET in plans (for dev sake. probably removed by the time you get to it)
+
+/plan/?title=Handover+clean&description=Mop+and+vacuum+my+4-room+flat+before+handover,+we+have+a+cat+and+glass+shelves&category_hint=&housing_type=hdb&area_m2=90&num_rooms=4&floor_type=tile&has_stairs=&is_outdoor=&has_pets=on&has_children=&fragile_items=on&payload_kg=0&budget_sgd=250&start_date=2026-11-20&deadline_date=2026-11-22&hours_per_day=4&quiet_hours=22:00-08:00&special_notes=Skip+the+study+room

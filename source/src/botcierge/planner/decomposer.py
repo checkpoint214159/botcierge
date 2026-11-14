@@ -27,10 +27,11 @@ from django.db import transaction
 from django.db.models import Q
 
 from catalog.models import AddOn, RobotModel, SkillPack
+from catalog.taxonomy import TASK_PLATFORMS
 
 from .models import Recommendation, TaskRequest, TaskSpec
+from .pricing import build_quote
 
-DELIVERY_FEE = Decimal("49.00")
 CATEGORY_CONFIDENCE_FLOOR = 0.55  # below this we tell the customer we are unsure
 TIME_BASED_CATEGORIES = {"elder_care", "home_patrol", "event_serving"}
 
@@ -88,15 +89,26 @@ def predict_category(description: str) -> tuple[str, float]:
     return m1.classes_[best], float(proba[best])
 
 
-def choose_robot(platform: str, tr: TaskRequest):
-    """Business rule on top of M2: cheapest active robot of the predicted platform that
-    satisfies the hard constraints. Falls back to any platform if none fits."""
-    qs = RobotModel.objects.filter(is_active=True, max_payload_kg__gte=tr.payload_kg)
+def eligible_robots(tr: TaskRequest, category: str | None = None):
+    """Robots that can do this job: a platform suited to the task type (TASK_PLATFORMS) plus
+    the hard constraints (payload, stairs, outdoor). Shared by the ML pick below and the
+    customer's own choice on the booking page."""
+    category = category or tr.spec.task_category
+    qs = RobotModel.objects.filter(is_active=True, max_payload_kg__gte=tr.payload_kg,
+                                   platform__in=TASK_PLATFORMS.get(category, []))
     if tr.has_stairs:
         # wheeled bases are allowed because they can take a stair kit add-on
         qs = qs.filter(Q(can_climb_stairs=True) | Q(platform__in=["wheeled_amr", "mobile_manipulator"]))
     if tr.is_outdoor:
         qs = qs.filter(outdoor=True)
+    return qs
+
+
+def choose_robot(platform: str, tr: TaskRequest, category: str):
+    """Business rule on top of M2: cheapest eligible robot of the predicted platform. If M2
+    predicted a platform with no eligible robot, fall back to the cheapest eligible one.
+    Returns None when nothing in the fleet suits the task, rather than a robot that can't do it."""
+    qs = eligible_robots(tr, category)
     same_platform = qs.filter(platform=platform).order_by("daily_rate").first()
     return same_platform or qs.order_by("daily_rate").first()
 
@@ -161,23 +173,6 @@ def build_conditioning(tr, category, skill_pack, addons, est_hours, subtasks) ->
     return base
 
 
-def build_quote(robot, addons, skill_pack, rental_days: int) -> tuple[Decimal, dict]:
-    """Shared by the ML recommendation (S07) and customer swaps (S08) so both price identically."""
-    breakdown = {"delivery_and_setup": float(DELIVERY_FEE)}
-    total = DELIVERY_FEE
-    if robot:
-        breakdown["robot"] = float(robot.daily_rate * rental_days)
-        total += robot.daily_rate * rental_days
-    for a in addons:
-        breakdown[f"addon:{a.code}"] = float(a.daily_rate * rental_days)
-        total += a.daily_rate * rental_days
-    if skill_pack:
-        breakdown["skill_pack"] = float(skill_pack.flat_fee)
-        total += skill_pack.flat_fee
-    breakdown["rental_days"] = rental_days
-    return total, breakdown
-
-
 @transaction.atomic
 def decompose(tr: TaskRequest) -> Recommendation:
     # 1. category
@@ -202,7 +197,7 @@ def decompose(tr: TaskRequest) -> Recommendation:
     m2 = load_model("m2_platform")["model"]
     p_proba = m2.predict_proba(X)[0]
     platform = m2.classes_[p_proba.argmax()]
-    robot = choose_robot(platform, tr)
+    robot = choose_robot(platform, tr, category)
 
     # 4. add-ons
     m3 = load_model("m3_addons")
@@ -216,7 +211,7 @@ def decompose(tr: TaskRequest) -> Recommendation:
     skill_pack = SkillPack.objects.filter(code=pack_code, is_active=True).first()
 
     # 6. quote
-    total, breakdown = build_quote(robot, addons, skill_pack, rental_days)
+    total, breakdown = build_quote(robot, addons, skill_pack, rental_days, _postal_code(tr))
 
     subtasks = SUBTASK_TEMPLATES.get(category, [])
     edge_cases = find_edge_cases(tr, category, days_needed, total, robot)
@@ -249,27 +244,48 @@ def decompose(tr: TaskRequest) -> Recommendation:
     return rec
 
 
+def _postal_code(tr: TaskRequest) -> str | None:
+    return tr.address.postal_code if tr.address_id else None
+
+
 @transaction.atomic
-def save_customer_edit(base: Recommendation, robot, addons) -> Recommendation:
-    """S08: the customer swapped the robot and/or add-ons. Re-quote and save a new
-    Recommendation(source=CUSTOMER); the ML row is kept so acceptance can be measured."""
+def save_customer_edit(base: Recommendation, robot, addons, skill_pack) -> Recommendation:
+    """S08: the customer changed the robot, add-ons or skill pack. Re-quote and save a new
+    Recommendation(source=CUSTOMER); the ML row is kept so acceptance can be measured (A13)."""
     tr = base.task_request
     spec = tr.spec
-    total, breakdown = build_quote(robot, addons, base.skill_pack, spec.est_days_needed)
+    total, breakdown = build_quote(robot, addons, skill_pack, spec.est_days_needed, _postal_code(tr))
     rec = Recommendation.objects.create(
         task_request=tr,
         source=Recommendation.Source.CUSTOMER,
         robot_model=robot,
         predicted_platform=base.predicted_platform,
         platform_confidence=base.platform_confidence,
-        skill_pack=base.skill_pack,
+        skill_pack=skill_pack,
         policy_conditioning=build_conditioning(
-            tr, spec.task_category, base.skill_pack, addons, spec.est_robot_hours, spec.subtasks),
+            tr, spec.task_category, skill_pack, addons, spec.est_robot_hours, spec.subtasks),
         quoted_price=total,
         price_breakdown=breakdown,
     )
     rec.addons.set(addons)
+    _refresh_spec_checks(tr, spec, total, robot)
+    return rec
+
+
+def requote(rec: Recommendation) -> Recommendation:
+    """Re-price a recommendation in place, e.g. after the delivery address changed.
+    The setup is unchanged, so this is not a customer edit and no new row is saved."""
+    tr = rec.task_request
+    total, breakdown = build_quote(rec.robot_model, list(rec.addons.all()), rec.skill_pack,
+                                   tr.spec.est_days_needed, _postal_code(tr))
+    if total != rec.quoted_price or breakdown != rec.price_breakdown:
+        rec.quoted_price, rec.price_breakdown = total, breakdown
+        rec.save(update_fields=["quoted_price", "price_breakdown"])
+        _refresh_spec_checks(tr, tr.spec, total, rec.robot_model)
+    return rec
+
+
+def _refresh_spec_checks(tr, spec, total, robot):
     spec.within_budget = total <= tr.budget_sgd
     spec.edge_cases = find_edge_cases(tr, spec.task_category, spec.est_days_needed, total, robot)
     spec.save(update_fields=["within_budget", "edge_cases"])
-    return rec

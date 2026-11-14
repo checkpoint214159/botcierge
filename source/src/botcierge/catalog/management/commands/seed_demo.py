@@ -15,7 +15,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from accounts.models import CustomerProfile
+from accounts.models import Address, CustomerProfile
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from orders.models import PromoCode
 
@@ -150,6 +150,10 @@ class Command(BaseCommand):
         if not User.objects.filter(username="demo").exists():
             u = User.objects.create_user("demo", "demo@botcierge.test", "demopass123", first_name="Dana")
             CustomerProfile.objects.create(user=u, housing_type="hdb", postal_code="640123")
+        demo = User.objects.get(username="demo")
+        if not demo.addresses.exists():
+            Address.objects.create(customer=demo, label="Home", line="Blk 123 Jurong West St 41",
+                                   unit="#08-123", postal_code="640123", is_default=True)
 
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {RobotModel.objects.filter(is_active=True).count()} robots, "

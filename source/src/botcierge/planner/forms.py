@@ -1,9 +1,6 @@
 from django import forms
-from django.db.models import Q
 
 from config.form_mixins import BootstrapFormMixin
-
-from catalog.models import AddOn, RobotModel
 
 from .models import TaskRequest
 
@@ -48,32 +45,4 @@ class TaskRequestForm(BootstrapFormMixin, forms.ModelForm):
         hours = data.get("hours_per_day")
         if hours is not None and not 1 <= hours <= 24:
             self.add_error("hours_per_day", "Hours per day must be between 1 and 24.")
-        return data
-
-
-class SwapForm(BootstrapFormMixin, forms.Form):
-    """S08: let the customer change the robot or attachments of a recommendation."""
-
-    robot = forms.ModelChoiceField(queryset=RobotModel.objects.none(), empty_label=None)
-    addons = forms.ModelMultipleChoiceField(
-        queryset=AddOn.objects.filter(is_active=True), required=False, widget=forms.CheckboxSelectMultiple)
-
-    def __init__(self, *args, task_request, **kwargs):
-        super().__init__(*args, **kwargs)
-        # same hard constraints as choose_robot(), so a swap can never break safety rules
-        robots = RobotModel.objects.filter(is_active=True, max_payload_kg__gte=task_request.payload_kg)
-        if task_request.has_stairs:
-            robots = robots.filter(
-                Q(can_climb_stairs=True) | Q(platform__in=["wheeled_amr", "mobile_manipulator"]))
-        if task_request.is_outdoor:
-            robots = robots.filter(outdoor=True)
-        self.fields["robot"].queryset = robots
-
-    def clean(self):
-        data = super().clean()
-        robot, addons = data.get("robot"), data.get("addons") or []
-        if robot:
-            bad = [a.name for a in addons if not a.fits(robot.platform)]
-            if bad:
-                self.add_error("addons", f"Not compatible with {robot.name}: {', '.join(bad)}.")
         return data

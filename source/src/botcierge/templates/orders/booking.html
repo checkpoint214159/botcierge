@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Book: {{ tr }}{% endblock %}
+{% block content %}
+<a href="{% url 'planner:result' tr.pk %}" class="small">&larr; Back to the recommendation</a>
+<h1 class="h3 mt-2 mb-1">Customise and book</h1>
+<p class="text-muted mb-4">Adjust the setup we suggested, then tell us when and where. The price on the right updates as you go.</p>
+
+<form method="post" enctype="multipart/form-data" id="booking-form"
+      data-quote-url="{% url 'orders:booking_quote' tr.pk %}">
+  {% csrf_token %}
+  {% for e in form.non_field_errors %}<div class="alert alert-danger small">{{ e }}</div>{% endfor %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      {# The job itself is read-only here: changing it means the models must re-plan from scratch. #}
+      <section class="bc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start">
+          <h2 class="bc-section mb-2">Your task</h2>
+          <a href="{% url 'planner:start' %}" class="small">Job changed? Start a new plan</a>
+        </div>
+        <p class="mb-2">"{{ tr.description }}"</p>
+        <div class="small text-muted d-flex flex-wrap gap-3">
+          <span>{{ spec.get_task_category_display }}</span>
+          <span>{{ tr.area_m2 }} m², {{ tr.num_rooms }} room{{ tr.num_rooms|pluralize }}</span>
+          <span>{{ spec.est_days_needed }} day{{ spec.est_days_needed|pluralize }} of robot time</span>
+          {% if tr.has_pets %}<span>Pets</span>{% endif %}{% if tr.has_children %}<span>Children</span>{% endif %}
+          {% if tr.has_stairs %}<span>Stairs</span>{% endif %}{% if tr.is_outdoor %}<span>Outdoor</span>{% endif %}
+          <span>Budget S${{ tr.budget_sgd }}</span>
+        </div>
+      </section>
+
+      <section class="bc-card p-4 mb-4">
+        <h2 class="bc-section">Robot</h2>
+        <p class="small text-muted">Only robots that can handle your payload, stairs and outdoor needs are listed.
+          {% if rec.source == "ml" %}The highlighted one is our recommendation.{% endif %}</p>
+        <div class="row g-2">
+          {% for r in robots %}
+          <div class="col-md-6">
+            <label class="bc-option d-flex gap-3 align-items-center p-2 h-100">
+              <input type="radio" name="robot" value="{{ r.pk }}" class="form-check-input flex-shrink-0"
+                     {% if r.pk|stringformat:"s" == form.robot.value|stringformat:"s" %}checked{% endif %}>
+              {% include "partials/robot_photo.html" with robot=r css="bc-frame-sm" %}
+              <span class="small">
+                <strong class="d-block">{{ r.manufacturer }} {{ r.name }}</strong>
+                <span class="text-muted">{{ r.get_platform_display }} · S${{ r.daily_rate }}/day</span>
+                {% if r.pk == rec.robot_model_id and rec.source == "ml" %}<span class="badge bc-badge ms-1">Recommended</span>{% endif %}
+              </span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        {% for e in form.robot.errors %}<div class="text-danger small mt-2">{{ e }}</div>{% endfor %}
+      </section>
+
+      <section class="bc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-baseline">
+          <h2 class="bc-section">Attachments</h2>
+          <small class="text-muted" id="addon-count"></small>
+        </div>
+        <p class="small text-muted">Tap to add or remove. Attachments that don't fit your robot are locked.</p>
+        <div class="row g-2">
+          {% for a in addon_list %}
+          <div class="col-md-6">
+            {# The real checkbox is visually hidden; the icon and highlight show its state (see .bc-addon in app.css). #}
+            <label class="bc-addon d-flex align-items-center gap-3 p-2 h-100">
+              <input type="checkbox" name="addons" value="{{ a.pk }}" class="visually-hidden"
+                     {% if a.pk in selected_addons %}checked{% endif %}>
+              <span class="bc-addon-icon flex-shrink-0" aria-hidden="true"></span>
+              <span class="flex-grow-1 small">
+                <strong class="d-block">{{ a.name }}</strong>
+                <span class="text-muted">S${{ a.daily_rate }}/day</span>
+                <span class="bc-addon-reason d-block text-danger"></span>
+              </span>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="form-text" id="addon-note"></div>
+        {% for e in form.addons.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </section>
+
+      <section class="bc-card p-4 mb-4">
+        <h2 class="bc-section">Skill pack</h2>
+        <p class="small text-muted">The trained behaviour the robot runs for this kind of task. Packs that don't run on your robot are greyed out.</p>
+        {{ form.skill_pack }}
+        {% for e in form.skill_pack.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+      </section>
+
+      <section class="bc-card p-4 mb-4">
+        <h2 class="bc-section">When and where</h2>
+        <div class="row">
+          <div class="col-md-6">{% include "partials/field.html" with field=form.start_date %}</div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+              {{ form.address }}
+              <div class="form-text"><a href="{% url 'accounts:addresses' %}?next={{ request.path|urlencode }}">Add or edit addresses</a> · delivery is priced by zone from our Jurong West depot</div>
+              {% for e in form.address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="mb-1">
+          <label class="form-label" for="{{ form.floor_plan.id_for_label }}">{{ form.floor_plan.label }}</label>
+          {% if tr.floor_plan %}
+          <div class="d-flex gap-3 align-items-center mb-2">
+            <img src="{{ tr.floor_plan.url }}" alt="Your floor plan" class="bc-plan-thumb">
+            <small class="text-muted">Uploaded. Choose a new file to replace it.</small>
+          </div>
+          {% endif %}
+          {{ form.floor_plan }}
+          <div class="form-text">A sketch or phone photo is fine. Mark rooms the robot should skip.</div>
+          {% for e in form.floor_plan.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <div class="col-lg-4">
+      <aside class="bc-card bc-rec p-4 bc-sticky" id="quote" aria-live="polite">
+        <h2 class="bc-section">Your quote</h2>
+        <p class="small mb-2" id="q-dates">{{ start_end.0|date:"j M Y" }} to {{ start_end.1|date:"j M Y" }}</p>
+        <table class="table table-sm small mb-2"><tbody id="q-lines">
+          {% for label, amount in lines %}
+          <tr><td>{{ label }}</td><td class="text-end">{% if amount is None %}<span class="text-muted">-</span>{% else %}S${{ amount|floatformat:2 }}{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot><tr class="fw-bold"><td>Total</td><td class="text-end" id="q-total">S${{ rec.quoted_price }}</td></tr></tfoot>
+        </table>
+        <p class="small mb-1" id="q-budget"></p>
+        <p class="small mb-3" id="q-units"></p>
+        <div id="q-errors"></div>
+
+        {% if problems %}
+        <div class="alert alert-danger small py-2 mb-3">
+          <strong class="d-block mb-1">Before you can check out</strong>
+          <ul class="mb-0 ps-3">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+
+        <button class="btn bc-btn w-100 mb-2" name="action" value="checkout">Save and check out</button>
+        <button class="btn bc-btn-outline w-100" name="action" value="save">Save for later</button>
+        <p class="small text-muted mt-2 mb-0">Saved bookings wait in your <a href="{% url 'orders:cart' %}">cart</a>.</p>
+      </aside>
+    </div>
+  </div>
+</form>
+
+{{ robot_platforms|json_script:"robot-platforms" }}
+{{ addon_platforms|json_script:"addon-platforms" }}
+{{ pack_robots|json_script:"pack-robots" }}
+<script>
+(() => {
+  const form = document.getElementById("booking-form");
+  const robotPlatforms = JSON.parse(document.getElementById("robot-platforms").textContent);
+  const addonPlatforms = JSON.parse(document.getElementById("addon-platforms").textContent);
+  const packRobots = JSON.parse(document.getElementById("pack-robots").textContent);
+  const money = n => "S$" + Number(n).toFixed(2);
+
+  // Grey out attachments and skill packs that don't fit the chosen robot (the server checks again on save).
+  function applyCompatibility() {
+    const robot = form.querySelector("input[name=robot]:checked");
+    if (!robot) return;
+    const platform = robotPlatforms[robot.value];
+    const robotName = robot.closest("label").querySelector("strong").textContent.trim();
+    const dropped = [];
+    form.querySelectorAll("input[name=addons]").forEach(cb => {
+      const allowed = addonPlatforms[cb.value];
+      const fits = !allowed || allowed.split(",").includes(platform);
+      const card = cb.closest("label");
+      if (!fits && cb.checked) { cb.checked = false; dropped.push(card.querySelector("strong").textContent.trim()); }
+      cb.disabled = !fits;
+      card.querySelector(".bc-addon-reason").textContent = fits ? "" : `Doesn't fit the ${robotName}`;
+    });
+    updateAddonCount();
+    document.getElementById("addon-note").textContent =
+      dropped.length ? "Removed (doesn't fit this robot): " + dropped.join(", ") : "";
+    const pack = form.querySelector("select[name=skill_pack]");
+    [...pack.options].forEach(opt => {
+      if (!opt.value) return;
+      opt.disabled = !(packRobots[opt.value] || "").split(",").includes(robot.value);
+    });
+    if (pack.selectedOptions[0]?.disabled) pack.value = "";
+  }
+
+  function updateAddonCount() {
+    const n = form.querySelectorAll("input[name=addons]:checked").length;
+    document.getElementById("addon-count").textContent = n ? `${n} selected` : "None selected";
+  }
+
+  // Ask the server for the price of the current (unsaved) choices and redraw the sidebar.
+  let timer;
+  async function refreshQuote() {
+    const params = new URLSearchParams();
+    for (const [k, v] of new FormData(form)) {
+      if (k !== "csrfmiddlewaretoken" && k !== "floor_plan") params.append(k, v);
+    }
+    const resp = await fetch(form.dataset.quoteUrl + "?" + params);
+    const data = await resp.json();
+    const errors = document.getElementById("q-errors");
+    errors.innerHTML = "";
+    if (!data.ok) {
+      data.errors.forEach(e => {
+        const div = document.createElement("div");
+        div.className = "alert alert-warning small py-2";
+        div.textContent = e;
+        errors.appendChild(div);
+      });
+      return;
+    }
+    const body = document.getElementById("q-lines");
+    body.innerHTML = "";
+    data.lines.forEach(l => {
+      const tr = body.insertRow();
+      tr.insertCell().textContent = l.label;
+      const amt = tr.insertCell();
+      amt.className = "text-end";
+      amt.textContent = l.amount === null ? "-" : money(l.amount);
+    });
+    document.getElementById("q-total").textContent = money(data.total);
+    document.getElementById("q-dates").textContent = `${data.start} to ${data.end} (${data.days} day${data.days === 1 ? "" : "s"})`;
+    const budget = document.getElementById("q-budget");
+    budget.textContent = data.within_budget ? `Within your S$${data.budget} budget` : `Above your S$${data.budget} budget`;
+    budget.className = "small mb-1 " + (data.within_budget ? "text-success" : "text-danger");
+    const units = document.getElementById("q-units");
+    units.textContent = data.units_free
+      ? `${data.units_free} unit${data.units_free === 1 ? "" : "s"} free on these dates`
+      : "Fully booked on these dates. Try other dates or another robot.";
+    units.className = "small mb-3 " + (data.units_free ? "text-success" : "text-danger");
+  }
+
+  form.addEventListener("change", e => {
+    if (e.target.name === "robot") applyCompatibility();
+    if (e.target.name === "addons") updateAddonCount();
+    if (e.target.name === "floor_plan") return;  // files aren't priced
+    clearTimeout(timer);
+    timer = setTimeout(refreshQuote, 200);
+  });
+  applyCompatibility();
+  refreshQuote();
+})();
+</script>
+{% endblock %}

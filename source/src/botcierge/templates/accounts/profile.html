@@ -8,6 +8,8 @@
       {% for field in form %}{% include "partials/field.html" %}{% endfor %}
       <button class="btn bc-btn w-100">Save</button>
     </form>
+    <hr>
+    <a href="{% url 'accounts:addresses' %}">Manage delivery addresses</a>
   </div>
 </div></div>
 {% endblock %}

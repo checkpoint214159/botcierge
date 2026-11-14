@@ -63,3 +63,29 @@ FLOOR_TYPE_CHOICES = [
     ("glass", "Glass (windows)"),
     ("water", "Water (pool)"),
 ]
+
+
+# Which platforms and skill packs make sense for each task type. Mirrors the labelling rules
+# in ml/generate_data.py (label_platform / label_skill_pack), so the booking page only offers
+# what the models could have recommended. Update both together.
+TASK_PLATFORMS = {
+    "floor_cleaning": ["wheeled_amr", "quadruped"],
+    "window_cleaning": ["window_crawler"],
+    "lawn_care": ["lawn_robot", "quadruped"],
+    "pool_cleaning": ["pool_crawler"],
+    "tidying": ["mobile_manipulator", "humanoid"],
+    "elder_care": ["wheeled_amr", "mobile_manipulator", "humanoid"],
+    "event_serving": ["service_cart", "mobile_manipulator"],
+    "home_patrol": ["wheeled_amr", "quadruped"],
+}
+
+TASK_SKILL_PACKS = {
+    "floor_cleaning": ["coverage_clean", "spot_clean"],
+    "window_cleaning": ["facade_crawl"],
+    "lawn_care": ["lawn_coverage"],
+    "pool_cleaning": ["pool_coverage"],
+    "tidying": ["declutter_sort", "pick_and_place"],
+    "elder_care": ["companion_monitor", "fetch_and_deliver"],
+    "event_serving": ["serve_and_navigate"],
+    "home_patrol": ["patrol_route"],
+}

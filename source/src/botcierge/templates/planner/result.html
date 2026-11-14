@@ -54,13 +54,17 @@
       {% endif %}
 
       <table class="table table-sm mt-3 mb-2 small">
-        {% for label, amount in lines %}<tr><td>{{ label }}</td><td class="text-end">S${{ amount|floatformat:2 }}</td></tr>{% endfor %}
-        <tr class="fw-bold"><td>Total</td><td class="text-end">S${{ rec.quoted_price }}</td></tr>
+        {% for label, amount in lines %}<tr><td>{{ label }}</td><td class="text-end">{% if amount is None %}<span class="text-muted">-</span>{% else %}S${{ amount|floatformat:2 }}{% endif %}</td></tr>{% endfor %}
+        <tr class="fw-bold"><td>Total{% if "delivery_and_setup" not in rec.price_breakdown %} <small class="fw-normal text-muted">before delivery</small>{% endif %}</td><td class="text-end">S${{ rec.quoted_price }}</td></tr>
       </table>
       <p class="small {% if spec.within_budget %}text-success{% else %}text-danger{% endif %}">
         {% if spec.within_budget %}Within your S${{ tr.budget_sgd }} budget{% else %}Above your S${{ tr.budget_sgd }} budget{% endif %}</p>
-      <form method="post" action="{% url 'orders:cart_add' rec.pk %}">{% csrf_token %}<button class="btn bc-btn w-100 mb-2">Add to cart</button></form>
-      <a href="{% url 'planner:swap' tr.pk %}" class="btn btn-outline-dark w-100">Change robot or attachments</a>
+      {% if order %}
+      <a href="{% url 'orders:order_detail' order.pk %}" class="btn bc-btn w-100">Booked: view order #{{ order.pk }}</a>
+      {% else %}
+      <a href="{% url 'orders:booking' tr.pk %}" class="btn bc-btn w-100">Customise and book</a>
+      <p class="small text-muted mt-2 mb-0">Change the robot, attachments or skill pack, pick your dates and address. {% if tr.status == "planned" %}This plan is in your <a href="{% url 'orders:cart' %}">cart</a>.{% endif %}</p>
+      {% endif %}
     </section>
   </div>
 </div>
