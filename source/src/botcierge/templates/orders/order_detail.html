@@ -9,7 +9,7 @@
   <div class="col-lg-7">
     <section class="bc-card p-4">
       <h2 class="bc-section">Tracking</h2>
-      {% if cancelled %}<div class="alert alert-secondary small">This booking was cancelled.</div>{% endif %}
+      {% if cancelled %}<div class="alert alert-secondary small">This booking was cancelled.{% if payment.status == "refunded" %} S${{ payment.amount }} was refunded to your card.{% endif %}</div>{% endif %}
       <ol class="list-unstyled mb-3">
         {% for label, done in steps %}
         <li class="mb-1 {% if done %}fw-semibold{% else %}text-muted{% endif %}">{% if done %}&#10003;{% else %}&#9675;{% endif %} {{ label }}</li>
@@ -26,6 +26,39 @@
       <h2 class="bc-section">Summary</h2>
       {% include "partials/setup_summary.html" with robot=summary.robot addons=summary.addons skill_pack=summary.skill_pack lines=summary.lines total=summary.total total_label="Paid" discount=summary.discount promo_code=summary.promo_code %}
     </section>
+
+    {% if review %}
+    <section class="bc-card p-4 mt-3">
+      <h2 class="bc-section">Your review</h2>
+      <div class="bc-stars mb-1" aria-label="{{ review.rating }} out of 5">{% for i in "12345" %}{% if forloop.counter <= review.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</div>
+      {% if review.comment %}<p class="small mb-0" style="white-space: pre-line">{{ review.comment }}</p>{% endif %}
+    </section>
+    {% elif can_review %}
+    <section class="bc-card p-4 mt-3 text-center">
+      <p class="mb-2">How did the job go?</p>
+      <a href="{% url 'support:review_new' order.pk %}" class="btn bc-btn">Rate this job</a>
+    </section>
+    {% endif %}
+
+    {% if changeable %}
+    {# S18: change of plans. Both forms POST; picking a date alone changes nothing. #}
+    <section class="bc-card p-4 mt-3">
+      <h2 class="bc-section">Change of plans?</h2>
+      <p class="small text-muted">You can move or cancel this booking until {{ last_change_day|date:"j M" }}, the day before it starts. The price stays the same.</p>
+      <form method="post" action="{% url 'orders:order_reschedule' order.pk %}">{% csrf_token %}
+        {% include "partials/field.html" with field=reschedule_form.start_date %}
+        <button class="btn bc-btn-outline w-100">Move booking</button>
+      </form>
+      <hr>
+      <form method="post" action="{% url 'orders:order_cancel' order.pk %}"
+            onsubmit="return confirm('Cancel order #{{ order.pk }}? S${{ order.total }} will be refunded to your card.');">{% csrf_token %}
+        <button class="btn btn-outline-danger w-100">Cancel booking and refund S${{ order.total }}</button>
+      </form>
+    </section>
+    {% elif ongoing %}
+    <p class="small text-muted mt-3 mb-0">This booking has started or is too close to change online. Contact support if your plans changed.</p>
+    {% endif %}
+
     <p class="small text-muted mt-2">Need support? <a href="{% url 'support:ticket_list' %}?order={{ order.pk }}">Click here</a>.</p>
   </div>
 </div>

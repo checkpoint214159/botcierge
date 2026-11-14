@@ -1,0 +1,126 @@
+# pool_cleaning: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+clean pool
+~ pool cleaning pls
+pool is full of leaves from the tree next to it
+~ lots of leaves in the swimming pool
+~ the tree drops leaves into my pool every day
+pool water turning green, algae on the walls
+~ green pool, algae growing on the sides
+~ my pool went green, walls slimy
+weekly pool maintenance for landed house
+~ landed home pool, weekly cleaning
+scrub the pool tiles, there's a dark line at the waterline
+~ waterline of pool has black ring, need scrubbing
+the jacuzzi needs cleaning before guests come
+~ clean the hot tub before the party
+plunge pool on my roof terrace is dirty
+vacuum the bottom of the pool
+~ pool floor has dirt and sand, vacuum it
+skim the pool
+pool party on saturday, need the pool clean
+~ having a pool party this weekend, pool must be clean
+~ pool party sat, pls clean pool friday
+going away 2 weeks, keep the pool clean
+~ on holiday for two weeks, need pool maintained
+the pool has dead insects floating
+our pool guy quit, need someone weekly
+~ pool man stopped coming, need weekly cleaning
+the swimming pool floor has stains
+pool is cloudy
+~ pool water cloudy
+kids pool in the garden is slimy
+clean the pool walls and floor
+small pool at my bungalow, 8m long
+~ 8 metre pool at the bungalow
+frangipani flowers keep falling in the pool
+pool full of debris after the storm
+~ storm blew branches and leaves into the pool
+pool cleaning every week
+the pool tiles are slippery
+there is sand in the pool from the kids
+~ kids brought sand into the pool
+need pool cleaned before we sell the house
+~ selling house, pool must look clean for viewings
+pool cleaning robot rental for 1 month
+~ rent a pool robot for a month
+the lap pool needs scrubbing
+lots of mosquito larvae in the pool, stagnant
+~ pool water stagnant, got mosquito larvae
+koi pond needs cleaning
+# borderline: a pond is not a swimming pool, but it is the closest category
+pond at the front is murky
+pool skimmer basket keeps clogging, need someone to clean pool regularly
+the infinity pool edge has algae
+clean the water feature and pool
+pool has black spots on the floor
+pool clean before CNY
+~ CNY coming, want the pool sparkling
+the pool steps have moss
+pool brushing
+algae
+~ algae problem
+the spa pool is dirty
+our shophouse has a small dipping pool, needs cleaning
+pool cleaning weekly while my husband recovers from surgery
+~ husband usually cleans pool but he had surgery
+can a robot clean the pool without draining it?
+pool has oily film on the surface from sunscreen
+~ sunscreen oil floating on the pool surface
+hair and leaves stuck in the pool drain
+pool for my airbnb villa, clean between guests
+~ villa pool cleaning between bookings
+the bottom of the pool is dirty, cant see the tiles
+~ cant see the pool floor tiles, too dirty
+monthly deep clean of the pool
+my pool looks dull and dirty
+there are frogs in the pool lol
+~ frogs keep getting into my pool
+pool cleaning for 3 days
+pool walls slimy
+pool needs scrubbing and vacuuming
+pool cleaning for my condo private pool unit
+~ condo unit with private pool, needs cleaning
+the pool is too big for me to clean by hand
+pls clean the swimming pool asap
+i have a 10m pool and a jacuzzi
+~ 10 metre pool plus jacuzzi
+dog fur in the pool, he swims in it
+~ my dog swims in the pool, fur everywhere
+pool cleaning, budget about 200
+leaves and bugs in pool
+dirty water in pool after the rain
+~ pool water dirty after heavy rain
+the pool tiles have calcium deposits
+pool skim and vacuum twice a week
+dead leaves at the bottom of the pool
+clean the kids splash pool
+salt water pool needs cleaning
+pool upkeep
+the pool
+the pool walls have yellow stains
+pool cleaning before my son's swim practice at home
+leaves in the pool every morning, need daily skimming
+~ skim the pool daily, leaves every morning
+can clean my pool, its quite small
+the pool filter area dirty and pool floor sandy
+pool cleaning pls, got guests staying next week
+~ house guests next week, want the pool clean
+the pool has a lot of dust and pollen on top
+the pool lining has algae patches
+pool tiles near the steps very slimy
+my pool hasnt been cleaned since covid lol
+~ havent cleaned the pool in years
+the pool water looks fine but the floor is dirty
+need weekly pool scrub while i look for a new pool guy
+pool cleaning for 2 months while we renovate the house
+the pool has bird droppings floating
+~ birds pooping into my pool
+clean the pool and the jacuzzi weekly
+pool is murky, cant see the bottom
+~ murky pool water
+algae spots at the pool corners
+plunge pool
+# multi-request messages: labelled by the main job
+clean the pool and if possible cut the grass around it

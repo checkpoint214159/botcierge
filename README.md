@@ -5,8 +5,8 @@ IS2108 AY26/27 S1 pair project. Robots-as-a-service for homes: describe a chore,
 ## Layout
 ```
 docs/                  business model, user stories, data model, ML notes, GenAI log (report goes here as PPXX.docx)
-ml/                    synthetic data generator + model training (writes joblib into the app)
 source/                what gets zipped for submission
+  ml/                  synthetic data generator + model training (writes joblib into the app)
   readme.txt           required by the brief
   requirements.txt
   src/botcierge/       Django project (manage.py)

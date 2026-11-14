@@ -44,8 +44,8 @@ One flow, three input stories, then the output stories. Together they form the M
 |---|---|---|---|---|---|---|
 | S11 | As a customer, I want to track my booking from confirmed to collected so that I know when the robot arrives and finishes. | done | | | | `orders.order_detail`: step tracker plus update log from `OrderStatusEvent`. Fed by staff story A07. Links to review (S13) and support (S14) still to add. |
 | S12 | As a customer, I want to view my past orders and rebook so that repeat chores are one click. | stub | | | | |
-| S18 | As a customer, I want to cancel or reschedule a booking that hasn't started so that I can change my plans. | todo | | | | Release the reserved `FleetUnit`; write an `OrderStatusEvent`. Needs a cancellation rule (e.g. until the day before). |
-| S13 | As a customer, I want to rate and review a completed job so that others can choose well. | stub | | | | One review per completed order. |
+| S18 | As a customer, I want to cancel or reschedule a booking that hasn't started so that I can change my plans. | done | | | | `orders.services.cancel_order` / `reschedule_order`. Allowed until the day before the start and before dispatch. Cancel refunds in full and frees the unit; reschedule keeps length and price, keeps the unit if free, moves the plan window. Both write an `OrderStatusEvent`. |
+| S13 | As a customer, I want to rate and review a completed job so that others can choose well. | done | | | | One review per completed/collected order, not editable after posting (`support.review_new`). Robot and skill pack come from the order. Shown on the order page and the robot's catalogue page. |
 | S14 | As a customer, I want to raise a support ticket on an order, which is marked urgent automatically if the robot is already on site, and see replies, so that problems get fixed quickly. | stub | | | | Priority URGENT if order is ON_SITE or RUNNING. |
 
 ## Staff panel
@@ -66,9 +66,9 @@ Same CRUD pattern across all three; build one and reuse it.
 
 | ID | Story | Status | ML | Owner | Shot | Notes |
 |---|---|---|---|---|---|---|
-| A03 | As staff, I want to add, edit and deactivate robot models so that the catalogue stays current. | stub | | | | |
-| A04 | As staff, I want to manage fleet units (status, depot, service date) so that inventory is accurate. | stub | | | | |
-| A05 | As staff, I want to manage add-ons and skill packs, including compatibility and default conditioning, so that recommendations only use valid combos. | todo | | | | New labels also need `ml/taxonomy.py` + `catalog/taxonomy.py` + retraining. |
+| A03 | As staff, I want to add, edit and deactivate robot models so that the catalogue stays current. | done | | | | `staffpanel.robot_list/robot_edit/robot_toggle`. Unlist instead of delete (orders point at robots). Shows units and live orders per robot. Staff set which task types each robot can be booked for (`RobotModel.task_categories`), which drives `eligible_robots()` on the booking page and the planner's fallback. |
+| A04 | As staff, I want to manage fleet units (status, depot, service date) so that inventory is accurate. | done | | | | `staffpanel.fleet_list/fleet_edit`. Filters, status counts, next order, service due after 90 days. Reserved/deployed are set by orders only; a booked unit can't go to maintenance or retired. |
+| A05 | As staff, I want to manage add-ons and skill packs, including compatibility and default conditioning, so that recommendations only use valid combos. | done | | | | `staffpanel.addon_*` / `skillpack_*`. Codes are free-form but locked after creation. Skill packs carry task types (booking page uses them), robots and default conditioning JSON. Sync checks in `catalog/checks.py`; the recommendation models page (`staffpanel.ml_models`, `/staff/recommendation-models/`, `planner/ml_registry.py`) shows metrics and which catalogue items each model knows (new ones need retraining). |
 
 ### Epic: Human-in-the-loop ML (A08 -> A12)
 

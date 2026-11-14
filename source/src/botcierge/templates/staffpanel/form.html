@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% comment %}
+Shared add/edit page for the catalogue (A03-A05). The view passes:
+  form, title, back (list URL), intro (one line of rules), aside [(label, value)], issues (sync checks)
+{% endcomment %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "staffpanel/_catalogue_tabs.html" %}
+<div class="d-flex justify-content-between align-items-baseline mb-2">
+  <h1 class="h4 mb-0">{{ title }}</h1>
+  <a href="{{ back }}" class="small">Back to list</a>
+</div>
+{% if intro %}<p class="text-muted small">{{ intro }}</p>{% endif %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <form method="post" enctype="multipart/form-data" class="bc-card p-4 bc-staff-form">{% csrf_token %}
+      {% for e in form.non_field_errors %}<div class="alert alert-danger small">{{ e }}</div>{% endfor %}
+      {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+      <div class="d-flex gap-2">
+        <a href="{{ back }}" class="btn bc-btn-outline">Cancel</a>
+        <button class="btn bc-btn flex-grow-1">Save</button>
+      </div>
+    </form>
+  </div>
+  <div class="col-lg-4">
+    {# sticky so "Needs attention" stays in view while scrolling a long form #}
+    <div class="bc-sticky">
+    {% include "staffpanel/_issues.html" %}
+    {% if aside %}
+    <div class="bc-card p-3">
+      {% for label, value in aside %}<div class="bc-k">{{ label }}</div><p class="small">{{ value }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    </div>
+  </div>
+</div>
+{# turns the multi-selects (platforms, task types, robots) into chips with a search box #}
+<script src="{% static 'js/chip_select.js' %}"></script>
+{% endblock %}

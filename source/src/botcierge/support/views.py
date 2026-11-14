@@ -1,4 +1,4 @@
-"""Reviews and after-sales support. S14 support built; S13 reviews still to do.
+"""Reviews (S13) and after-sales support (S14).
 
 Support is one page: pick one of your orders, then either see its ticket or fill one in.
 Every other entry point (the order page, old ticket links) just opens this page with an order picked.
@@ -10,22 +10,40 @@ from django.urls import reverse
 from django.utils import timezone
 
 from orders.models import Order
-from orders.services import order_summary
+from orders.services import REVIEWABLE, order_summary
 
-from .forms import SupportTicketForm
+from .forms import ReviewForm, SupportTicketForm
 from .models import SupportTicket
 
 URGENT_STATUSES = [Order.Status.ON_SITE, Order.Status.RUNNING]  # robot is in the customer's home right now
 
 
-def _todo(request, story, title):
-    return render(request, "coming_soon.html", {"story": story, "title": title})
-
-
 @login_required
 def review_new(request, order_pk):
-    # TODO(S13): only for COMPLETED/COLLECTED orders owned by the user, one review per order.
-    return _todo(request, "S13", "Rate your job")
+    """S13: rate a finished job. One review per order, and it can't be edited afterwards
+    (same rule as tickets), so the ratings staff see are what customers said at the time."""
+    order = get_object_or_404(Order, pk=order_pk, customer=request.user)
+    if hasattr(order, "review"):
+        messages.info(request, "You've already reviewed this booking. Thanks!")
+        return redirect("orders:order_detail", pk=order.pk)
+    if order.status not in REVIEWABLE:
+        messages.warning(request, "You can rate a booking once the job is completed.")
+        return redirect("orders:order_detail", pk=order.pk)
+
+    summary = order_summary(order)
+    if summary["robot"] is None:  # can't happen for a normal order, but the review needs a robot
+        messages.error(request, "We couldn't find the robot on this order.")
+        return redirect("orders:order_detail", pk=order.pk)
+    form = ReviewForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        review = form.save(commit=False)
+        # who and what are taken from the order we looked up, never from the form
+        review.order, review.customer = order, request.user
+        review.robot_model, review.skill_pack = summary["robot"], summary["skill_pack"]
+        review.save()
+        messages.success(request, "Thanks for the review! It now shows on the robot's page.")
+        return redirect("orders:order_detail", pk=order.pk)
+    return render(request, "support/review_form.html", {"order": order, "summary": summary, "form": form})
 
 
 def _support_url(order_pk=None):

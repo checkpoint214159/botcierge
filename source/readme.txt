@@ -23,3 +23,7 @@ Open http://127.0.0.1:8000/
 
 Machine learning models are pre-trained joblib files in src\botcierge\planner\mlmodels\.
 They were trained with scikit-learn 1.9.1; use the pinned versions in requirements.txt.
+Training code is in ml\. To regenerate the synthetic data and retrain (optional):
+  cd ml
+  python generate_data.py
+  python train_models.py

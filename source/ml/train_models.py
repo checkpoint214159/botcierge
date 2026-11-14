@@ -1,6 +1,6 @@
 """Train and persist the five Botcierge models as joblib bundles.
 
-  M1 task_category   TF-IDF + LogisticRegression          (text -> category)
+  M1 task_category   TF-IDF (words + chars) + LogisticRegression  (text -> category)
   M2 platform        RandomForestClassifier               (spec -> robot platform)
   M3 addons          MultiOutput RandomForestClassifier   (spec -> add-on set)
   M4 skill_pack      RandomForestClassifier               (spec -> policy family)
@@ -9,7 +9,7 @@
 Each bundle is a dict: {"model": fitted Pipeline, "features": [...], "labels": [...], "metrics": {...}}
 so the Django side can build a DataFrame with the right columns and call predict.
 
-Run:  python ml/generate_data.py && python ml/train_models.py
+Run:  python source/ml/generate_data.py && python source/ml/train_models.py
 """
 from pathlib import Path
 
@@ -19,17 +19,18 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, r2_score
+from sklearn.metrics import (accuracy_score, classification_report, f1_score,
+                             mean_absolute_error, r2_score)
 from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 from taxonomy import (ADDONS, BOOLEAN_FEATURES, CATEGORICAL_FEATURES, NUMERIC_FEATURES,
                       STRUCTURED_FEATURES)
 
 DATA = Path(__file__).parent / "data"
-ARTIFACTS = Path(__file__).parents[1] / "source" / "src" / "botcierge" / "planner" / "mlmodels"
+ARTIFACTS = Path(__file__).parents[1] / "src" / "botcierge" / "planner" / "mlmodels"
 SEED = 2108
 
 
@@ -45,21 +46,33 @@ def save(name: str, model, features, labels, metrics):
     path = ARTIFACTS / f"{name}.joblib"
     joblib.dump({"model": model, "features": features, "labels": labels, "metrics": metrics},
                 path, compress=3)
-    print(f"  saved {path.relative_to(ARTIFACTS.parents[4])}  {metrics}")
+    print(f"  saved {path.relative_to(ARTIFACTS.parents[3])}  {metrics}")
 
 
 def train_m1():
     df = pd.read_csv(DATA / "task_descriptions.csv")
-    X_tr, X_te, y_tr, y_te = train_test_split(df["description"], df["task_category"],
-                                              test_size=0.2, random_state=SEED, stratify=df["task_category"])
+    # The split is fixed in generate_data.py, not drawn here: the test rows are
+    # hand-written requests whose paraphrases were never put in the training data.
+    # A random split would let rewordings of the same request land on both sides.
+    train, test = df[df["split"] == "train"], df[df["split"] == "test"]
     pipe = Pipeline([
-        ("tfidf", TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=2)),
+        ("tfidf", FeatureUnion([
+            # word 1-2 grams catch phrases like "mow lawn" or "check on"
+            ("words", TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=2)),
+            # character 3-5 grams inside words still match typos ("vaccum", "lawm")
+            ("chars", TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5),
+                                      sublinear_tf=True, min_df=2)),
+        ])),
         ("clf", LogisticRegression(max_iter=2000, C=5.0)),
     ])
-    pipe.fit(X_tr, y_tr)
-    pred = pipe.predict(X_te)
+    pipe.fit(train["description"], train["task_category"])
+    pred = pipe.predict(test["description"])
+    print(classification_report(test["task_category"], pred, digits=3))
     save("m1_task_category", pipe, ["description"], list(pipe.classes_),
-         {"accuracy": round(accuracy_score(y_te, pred), 3)})
+         {"accuracy": round(accuracy_score(test["task_category"], pred), 3),
+          "macro_f1": round(f1_score(test["task_category"], pred, average="macro"), 3),
+          "test_set": f"{len(test)} held-out hand-written requests",
+          "train_rows": len(train)})
 
 
 def train_structured():

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Rate order #{{ order.pk }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Rate your job</h1>
+<p class="text-muted mb-4">Order #{{ order.pk }} · {{ order.start_date|date:"j M" }} to {{ order.end_date|date:"j M Y" }}. Your review shows on the robot's page with your first name.</p>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <section class="bc-card p-4">
+      <h2 class="bc-section">What you rented</h2>
+      {% include "partials/setup_summary.html" with robot=summary.robot addons=summary.addons skill_pack=summary.skill_pack lines=summary.lines total=summary.total total_label="Paid" discount=summary.discount promo_code=summary.promo_code %}
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="bc-card p-4">
+      <form method="post">{% csrf_token %}
+        <fieldset class="mb-3">
+          <legend class="form-label fs-6">{{ form.rating.label }}</legend>
+          {# radios drawn by hand so each option is a full-width row, best rating first #}
+          {% for choice in form.rating %}
+          <div class="form-check mb-1">
+            {{ choice.tag }}
+            <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+          </div>
+          {% endfor %}
+          {% for e in form.rating.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+        </fieldset>
+        {% include "partials/field.html" with field=form.comment %}
+        <div class="d-flex gap-2">
+          <a href="{% url 'orders:order_detail' order.pk %}" class="btn bc-btn-outline">Not now</a>
+          <button class="btn bc-btn flex-grow-1">Post review</button>
+        </div>
+        <p class="small text-muted mt-2 mb-0">One review per booking. It can't be edited after posting.</p>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

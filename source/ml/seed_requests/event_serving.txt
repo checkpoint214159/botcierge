@@ -1,0 +1,143 @@
+# event_serving: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+serve drinks at my party
+~ need someone to serve drinks at party
+~ drinks serving for my house party
+birthday party for my son, 30 kids, need help serving food
+~ kids birthday party, 30 children, serve food and drinks
+~ son's bday party, help to serve the kids
+CNY open house, need help bringing food out to guests
+~ CNY visiting at my place, serve food to visitors
+~ chinese new year gathering, help carry food trays
+house warming party saturday, serve canapes
+~ housewarming this sat, need canapes passed around
+wedding tea ceremony at home, need help serving
+~ tea ceremony at home for wedding, serve tea and snacks
+carry food trays from kitchen to the garden
+~ bring food trays out to the garden
+bbq party, bring food from grill to tables
+~ bbq at my landed house, carry food to guests
+~ serve bbq food to the tables
+my dad's 80th birthday dinner at home, 50 guests
+~ grandpa's 80th birthday celebration, 50 people, need serving help
+serve cake at the party
+~ hand out cake slices at the party
+christmas party at my condo function room
+~ xmas party at condo function room, serve food
+office party in our small shop, serve snacks
+~ shop party, hand out snacks to staff
+deepavali open house, serving guests
+~ deepavali visiting, serve murukku and drinks
+hari raya open house, need help to serve food and drinks
+~ raya open house, serve guests
+need a waiter robot for a dinner party
+~ dinner party, need a robot waiter
+hand out drinks to guests as they arrive
+~ welcome drinks for guests at the door
+collect empty glasses and plates during the party
+~ clear used plates and cups while party is going on
+baby full month celebration, serve food
+~ full month party for baby, help serve
+shop opening, serve drinks to customers
+~ grand opening of my cafe, hand out drinks
+serve dishes to tables
+mahjong night, bring snacks and drinks to the table
+~ mahjong session, keep the drinks and snacks coming
+gender reveal party at home
+book club gathering, serve tea and kueh
+~ book club meetup at my place, serve tea
+bring around the satay during the party
+graduation party in the backyard, 40 people
+~ grad party 40 pax, serve food
+family reunion dinner, carry dishes from kitchen
+~ reunion dinner, help bring dishes out
+pass around the drinks
+serve food
+~ food serving
+party
+event at home, need serving
+~ home event, help serve guests
+funeral wake at void deck, serve drinks to visitors
+~ wake at the void deck, serve drinks to guests
+anniversary dinner for 20 at home
+~ 20 guests for our anniversary dinner, serving help
+serve drinks at our garden wedding
+~ garden wedding, need drinks served
+kids party, hand out goodie bags and drinks
+~ hand out party packs and drinks at kids party
+company dinner at my shophouse office
+watch party for the world cup, serve beer and snacks
+~ world cup viewing party, bring beers around
+serve the buffet food to elderly guests who cant queue
+~ some guests are old, bring buffet food to them
+high tea at home for my friends
+~ hosting high tea, serve scones and tea
+deliver dishes from kitchen to dining room during dinner
+need help at my party
+~ help needed for party
+pool party, serve drinks by the pool
+# borderline with pool_cleaning: the job is serving, not the pool
+carry snacks to guests at the poolside
+housewarming with 60 guests
+serve canapes
+church cell group gathering, serve food
+~ cell group at my place, serve food
+open house during the long weekend, need help with drinks
+bring around the food at my wedding dinner at home
+~ wedding dinner at home, serve food around
+farewell party for my colleague at my condo
+serve ice cream at the kids party
+~ kids party, hand out ice cream
+dinner party for my in-laws, bring dishes out
+~ in-laws dinner, serve dishes
+handing out drinks at the shop's anniversary sale
+pizza party at home for 25 people
+~ 25 pax pizza party, serve slices
+serve the tea at my mum's birthday tea party
+help with the party food
+~ party food help
+new year's eve countdown party at home
+~ NYE countdown party, serve drinks
+mooncake festival gathering, serve tea and mooncakes
+~ mid autumn party, serve mooncakes and tea
+serve drinks at my yacht party
+catering help at home for 30 pax
+serve guests
+help serve food at my daughter's 21st birthday at the condo bbq pit
+~ daughter's 21st at condo bbq pit, serve food
+lou hei at home for CNY, 20 pax, serve the yusheng and drinks
+~ CNY lohei at my place, serve guests
+serve mee siam and drinks at my mum's birthday
+~ mum's birthday, serve food and drinks
+my son's 1st birthday party, need help carrying food out
+~ baby's first bday party, carry food out
+serve champagne at the proposal dinner at home
+need drinks served at my rooftop party
+~ rooftop party, serve drinks
+help bring the steamboat ingredients to the tables
+~ steamboat party, bring ingredients to tables
+open house for my new landed house, 100 guests
+~ 100 guests at housewarming, need serving
+serve kopi and kueh to visitors during the prayer ceremony
+serve drinks to the kids at the playdate
+bring around snacks during the karaoke party
+~ karaoke night, serve snacks
+help serve at our small wedding lunch at home, 35 pax
+~ wedding lunch at home 35 people, serving help
+hand out drinks at the school fundraiser in our compound
+bring the food around at the halloween party
+need help to serve during my friends dinner on friday
+~ friday dinner with friends, need serving help
+pass around the cake and drinks at the farewell party
+serve dessert to guests
+carry trays of drinks at the reunion lunch
+serve guests at our brunch party
+~ hosting brunch, serve guests
+# multi-request messages: labelled by the main job
+party on sunday, need help serving food and maybe clear plates after
+serve drinks during the party then help pack up the chairs
+bbq tonight at my place, carry the meat and drinks around
+need help at my house party, 15 friends
+serve food and drinks for 3 hours at my open house
+my birthday party, help pls

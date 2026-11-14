@@ -1,7 +1,17 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.templatetags.static import static
 
-from .taxonomy import ADDON_CHOICES, PLATFORM_CHOICES, SKILL_PACK_CHOICES
+from .taxonomy import PLATFORM_CHOICES
+
+# Add-on and skill pack codes are what the ML models predict, so they are short fixed strings.
+# Staff can create new ones (A05); the models only learn a new code after retraining.
+code_validator = RegexValidator(r"^[a-z][a-z0-9_]*$", "Lower-case letters, digits and underscores, e.g. mop_module.")
+
+
+def split_codes(value: str) -> list[str]:
+    """Comma-separated codes stored in a CharField -> list (empty string = empty list)."""
+    return [c for c in value.split(",") if c]
 
 
 class RobotModel(models.Model):
@@ -25,6 +35,9 @@ class RobotModel(models.Model):
     max_payload_kg = models.DecimalField(max_digits=5, decimal_places=1, default=0)
     battery_hours = models.DecimalField(max_digits=4, decimal_places=1, default=4)
     noise_db = models.PositiveSmallIntegerField(default=55)
+    task_categories = models.CharField(
+        max_length=255, blank=True,
+        help_text="Comma-separated task category codes this robot can be booked for.")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -44,6 +57,10 @@ class RobotModel(models.Model):
         return ""
 
     @property
+    def category_list(self) -> list[str]:
+        return split_codes(self.task_categories)
+
+    @property
     def available_units(self):
         return self.units.filter(status=FleetUnit.Status.AVAILABLE).count()
 
@@ -51,7 +68,7 @@ class RobotModel(models.Model):
 class AddOn(models.Model):
     """Hardware extension attached to a robot for a job (mop module, stair kit, ...)."""
 
-    code = models.CharField(max_length=30, choices=ADDON_CHOICES, unique=True)
+    code = models.CharField(max_length=30, unique=True, validators=[code_validator])
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     daily_rate = models.DecimalField(max_digits=7, decimal_places=2)
@@ -63,26 +80,37 @@ class AddOn(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def platform_list(self) -> list[str]:
+        return split_codes(self.compatible_platforms)
+
     def fits(self, platform: str) -> bool:
-        return not self.compatible_platforms or platform in self.compatible_platforms.split(",")
+        return not self.compatible_platforms or platform in self.platform_list
 
 
 class SkillPack(models.Model):
     """A trained robot policy offered as a product. `default_conditioning` holds the policy's
     tunable parameters; the planner fills in per-job values on top of these defaults."""
 
-    code = models.CharField(max_length=30, choices=SKILL_PACK_CHOICES, unique=True)
+    code = models.CharField(max_length=30, unique=True, validators=[code_validator])
     name = models.CharField(max_length=100)
     version = models.CharField(max_length=20, default="1.0")
     summary = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     flat_fee = models.DecimalField(max_digits=7, decimal_places=2, default=0)
     compatible_robots = models.ManyToManyField(RobotModel, related_name="skill_packs", blank=True)
+    task_categories = models.CharField(
+        max_length=255, blank=True,
+        help_text="Comma-separated task category codes this pack is offered for on the booking page.")
     default_conditioning = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name} v{self.version}"
+
+    @property
+    def category_list(self) -> list[str]:
+        return split_codes(self.task_categories)
 
 
 class FleetUnit(models.Model):

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Fleet units{% endblock %}
+{% block content %}
+{% include "staffpanel/_catalogue_tabs.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h4 mb-0">Fleet units</h1>
+  <a href="{% url 'staffpanel:fleet_new' %}{% if selected_robot %}?robot={{ selected_robot }}{% endif %}" class="btn bc-btn btn-sm">Add a unit</a>
+</div>
+<div class="d-flex flex-wrap gap-2 mb-3 small">
+  {% for code, label in statuses %}
+  <a href="?status={{ code }}{% if selected_robot %}&robot={{ selected_robot }}{% endif %}" class="badge text-decoration-none {% if code == selected_status %}bc-badge{% else %}text-bg-light border{% endif %}">{{ label }}: {% for k, v in counts.items %}{% if k == code %}{{ v }}{% endif %}{% endfor %}</a>
+  {% endfor %}
+</div>
+{% include "staffpanel/_issues.html" %}
+<form method="get" class="d-flex gap-2 mb-3">
+  <select name="robot" class="form-select form-select-sm">
+    <option value="">All robots</option>
+    {% for r in robots %}<option value="{{ r.pk }}" {% if r.pk|stringformat:"s" == selected_robot %}selected{% endif %}>{{ r.name }}{% if not r.is_active %} (unlisted){% endif %}</option>{% endfor %}
+  </select>
+  <select name="status" class="form-select form-select-sm">
+    <option value="">All statuses</option>
+    {% for code, label in statuses %}<option value="{{ code }}" {% if code == selected_status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-sm bc-btn-outline">Filter</button>
+</form>
+<div class="bc-card p-3 table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Serial</th><th>Robot</th><th>Status</th><th>Depot</th><th>Last serviced</th><th>Next order</th></tr></thead>
+    {% for u in units %}
+    <tr>
+      <td><a href="{% url 'staffpanel:fleet_edit' u.pk %}" class="fw-semibold">{{ u.serial_number }}</a></td>
+      <td>{{ u.robot_model.name }}</td>
+      <td><span class="badge {% if u.status == 'available' %}bc-badge{% elif u.status == 'retired' %}text-bg-secondary{% elif u.status == 'maintenance' %}text-bg-warning{% else %}text-bg-info{% endif %}">{{ u.get_status_display }}</span></td>
+      <td>{{ u.depot }}</td>
+      <td>{{ u.last_serviced|date:"j M Y"|default:"never" }}{% if u.service_due %} <span class="badge text-bg-warning-subtle text-warning-emphasis border" title="Not serviced in {{ service_days }} days">service due</span>{% endif %}</td>
+      <td>{% if u.next_order %}<a href="{% url 'staffpanel:order_detail' u.next_order.pk %}">#{{ u.next_order.pk }}</a> · {{ u.next_order.start_date|date:"j M" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No units match.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

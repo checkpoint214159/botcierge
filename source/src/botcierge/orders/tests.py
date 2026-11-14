@@ -351,3 +351,78 @@ class TrackingTests(BookingFixture):
         order = self.book()
         resp = self.client.get(reverse("staffpanel:order_detail", args=[order.pk]))
         self.assertEqual(resp.status_code, 302)
+
+
+class ChangeOfPlansTests(BookingFixture):
+    """S18: cancel or reschedule until the day before the start date, before dispatch."""
+
+    def setUp(self):
+        super().setUp()
+        self.complete()
+        self.pay()
+        self.order = Order.objects.latest("pk")
+        self.unit = self.order.items.get(kind="robot").fleet_unit
+
+    def test_cancel_refunds_frees_unit_and_logs_event(self):
+        resp = self.client.post(reverse("orders:order_cancel", args=[self.order.pk]))
+        self.assertRedirects(resp, reverse("orders:order_detail", args=[self.order.pk]))
+        self.order.refresh_from_db()
+        self.unit.refresh_from_db()
+        self.assertEqual(self.order.status, Order.Status.CANCELLED)
+        self.assertEqual(self.order.payment.status, "refunded")
+        self.assertEqual(self.unit.status, FleetUnit.Status.AVAILABLE)
+        self.assertTrue(self.order.events.filter(status=Order.Status.CANCELLED).exists())
+        self.assertIn(self.unit, free_units(self.unit.robot_model, self.order.start_date, self.order.end_date))
+        # a cancelled order is finished, and can't be changed again
+        self.assertNotContains(self.client.get(reverse("orders:order_detail", args=[self.order.pk])), "Change of plans?")
+
+    def test_cancel_needs_post(self):
+        self.assertEqual(self.client.get(reverse("orders:order_cancel", args=[self.order.pk])).status_code, 405)
+
+    def test_no_changes_after_dispatch_or_on_start_day(self):
+        for change in ({"status": Order.Status.DISPATCHED}, {"start_date": date.today()}):
+            reset = {"status": Order.Status.CONFIRMED, "start_date": self.tr.start_date, **change}
+            Order.objects.filter(pk=self.order.pk).update(**reset)
+            self.client.post(reverse("orders:order_cancel", args=[self.order.pk]))
+            self.assertNotEqual(Order.objects.get(pk=self.order.pk).status, Order.Status.CANCELLED)
+
+    def test_reschedule_keeps_length_and_price_and_moves_plan(self):
+        new_start = self.order.start_date + timedelta(days=7)
+        length = self.order.end_date - self.order.start_date
+        total = self.order.total
+        resp = self.client.post(reverse("orders:order_reschedule", args=[self.order.pk]),
+                                {"start_date": new_start.isoformat()})
+        self.assertRedirects(resp, reverse("orders:order_detail", args=[self.order.pk]))
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.start_date, new_start)
+        self.assertEqual(self.order.end_date - self.order.start_date, length)
+        self.assertEqual(self.order.total, total)
+        self.assertTrue(self.order.events.filter(note__startswith="Moved from").exists())
+        self.tr.refresh_from_db()
+        self.assertEqual(self.tr.start_date, new_start)
+        self.assertEqual(self.order.recommendation.policy_conditioning["constraints"]["window"][0], new_start.isoformat())
+
+    def test_reschedule_to_overlapping_dates_keeps_same_unit(self):
+        # moving by one day overlaps the order's own booking, which must not count as a clash
+        new_start = self.order.start_date + timedelta(days=1)
+        self.client.post(reverse("orders:order_reschedule", args=[self.order.pk]), {"start_date": new_start.isoformat()})
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.start_date, new_start)
+        self.assertEqual(self.order.items.get(kind="robot").fleet_unit, self.unit)
+
+    def test_reschedule_rejects_today_and_sold_out_dates(self):
+        resp = self.client.post(reverse("orders:order_reschedule", args=[self.order.pk]),
+                                {"start_date": date.today().isoformat()})
+        self.assertContains(resp, "Pick a date from tomorrow onwards.")
+        FleetUnit.objects.filter(robot_model=self.unit.robot_model).update(status=FleetUnit.Status.MAINTENANCE)
+        resp = self.client.post(reverse("orders:order_reschedule", args=[self.order.pk]),
+                                {"start_date": (self.order.start_date + timedelta(days=10)).isoformat()})
+        self.assertContains(resp, "No unit of this robot is free")
+        self.assertEqual(Order.objects.get(pk=self.order.pk).start_date, self.order.start_date)
+
+    def test_cannot_change_someone_elses_order(self):
+        User.objects.create_user("o4", password="pw12345678")
+        self.client.login(username="o4", password="pw12345678")
+        self.assertEqual(self.client.post(reverse("orders:order_cancel", args=[self.order.pk])).status_code, 404)
+        self.assertEqual(self.client.post(reverse("orders:order_reschedule", args=[self.order.pk]),
+                                          {"start_date": "2099-01-01"}).status_code, 404)

@@ -1,6 +1,6 @@
 """Label vocabulary shared by the Django models and the ML pipeline.
 
-Codes must match ml/taxonomy.py at the repo root, because the joblib models
+Codes must match source/ml/taxonomy.py, because the joblib models
 predict these exact strings.
 """
 
@@ -65,8 +65,11 @@ FLOOR_TYPE_CHOICES = [
 ]
 
 
-# Which platforms and skill packs make sense for each task type. Mirrors the labelling rules
-# in ml/generate_data.py (label_platform / label_skill_pack), so the booking page only offers
+# Starting values: seed_demo (and migration catalog 0004) copy these onto each robot as
+# RobotModel.task_categories, by platform; after that staff edit them per robot (A03).
+# They also mirror the ML labelling rules, i.e. what the recommender (M2) learned.
+# Which platforms (and, initially, skill packs) make sense for each task type. Mirrors the labelling rules
+# in source/ml/generate_data.py (label_platform / label_skill_pack), so the booking page only offers
 # what the models could have recommended. Update both together.
 TASK_PLATFORMS = {
     "floor_cleaning": ["wheeled_amr", "quadruped"],
@@ -79,6 +82,8 @@ TASK_PLATFORMS = {
     "home_patrol": ["wheeled_amr", "quadruped"],
 }
 
+# Starting values only: seed_demo copies these into SkillPack.task_categories, and from then on
+# the database is the source of truth (staff edit it in A05).
 TASK_SKILL_PACKS = {
     "floor_cleaning": ["coverage_clean", "spot_clean"],
     "window_cleaning": ["facade_crawl"],

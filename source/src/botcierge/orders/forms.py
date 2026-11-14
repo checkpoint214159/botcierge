@@ -1,12 +1,12 @@
 import json
 import re
+from datetime import timedelta
 
 from django import forms
 from django.utils import timezone
 
 from accounts.models import Address
 from catalog.models import AddOn, RobotModel, SkillPack
-from catalog.taxonomy import TASK_SKILL_PACKS
 from config.form_mixins import BootstrapFormMixin
 from planner.decomposer import eligible_robots
 
@@ -33,8 +33,9 @@ class BookingForm(BootstrapFormMixin, forms.Form):
         super().__init__(*args, **kwargs)
         # only robots and skill packs that suit this task type and meet its payload/stairs/outdoor needs
         self.fields["robot"].queryset = eligible_robots(task_request).order_by("daily_rate")
-        self.fields["skill_pack"].queryset = SkillPack.objects.filter(
-            is_active=True, code__in=TASK_SKILL_PACKS.get(task_request.spec.task_category, []))
+        category = task_request.spec.task_category
+        suited = [p.pk for p in SkillPack.objects.filter(is_active=True) if category in p.category_list]
+        self.fields["skill_pack"].queryset = SkillPack.objects.filter(pk__in=suited)
         self.fields["address"].queryset = Address.objects.filter(customer=task_request.customer)
         self.fields["start_date"].widget.attrs["min"] = timezone.localdate().isoformat()
 
@@ -90,3 +91,27 @@ class CheckoutForm(BootstrapFormMixin, forms.Form):
         if not re.fullmatch(r"\d{16}", digits):
             raise forms.ValidationError("Enter 16 digits.")
         return digits
+
+
+class RescheduleForm(BootstrapFormMixin, forms.Form):
+    """S18: pick a new start date. The booking keeps its length and price."""
+
+    start_date = forms.DateField(label="New start date", widget=forms.DateInput(attrs={"type": "date"}))
+
+    def __init__(self, *args, order, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.order = order
+        self.fields["start_date"].widget.attrs["min"] = self.earliest().isoformat()
+
+    @staticmethod
+    def earliest():
+        # same rule as cancelling: nothing can be changed on or after the start day
+        return timezone.localdate() + timedelta(days=1)
+
+    def clean_start_date(self):
+        start = self.cleaned_data["start_date"]
+        if start < self.earliest():
+            raise forms.ValidationError("Pick a date from tomorrow onwards.")
+        if start == self.order.start_date:
+            raise forms.ValidationError("That's already your start date.")
+        return start

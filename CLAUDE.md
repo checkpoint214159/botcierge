@@ -10,12 +10,12 @@ Botcierge: IS2108 (NUS) pair project, a Django web app for renting home robots a
 - Every GenAI use must be logged in `docs/genai_log.md`. Commits co-authored by Claude carry a `Co-Authored-By` trailer.
 - Backlog and story status (S01–S15 customer, A01–A12 staff) live in `docs/user_stories.md`. Branch per story (`feat/S09-cart`), PR into `main`.
 - **The brief bans AI generating the whole app, and there is a code review.** Claude wrote the docs, data model, seed data, ML pipeline and the planner slice. The remaining stories (S08–S14 cart/checkout/tracking/reviews/tickets, A02–A12 staff panel) are for the two students to build *with* AI assistance. As of 2026-11-14, Manav has first versions of S08 swap, S09 cart, S10 checkout, S11 tracking and A07 staff orders (`orders/services.py`, `planner.views.swap`, made with Copilot); Ben is reworking S08–S11 into a single booking page. `docs/user_stories.md` was restructured into epics in that merge, so check story IDs there. Don't implement a whole backlog item unprompted. Work at the scope the user asks for, explain the code so they can defend it in review, and remind them to log the use.
-- **Working mode (agreed 2026-11-13, revised 2026-11-14).** Default: the students write the web app code; Claude explains, gives short snippets and reviews. Exception (2026-11-14): for Ben's S08–S12 booking rework, Claude builds templates and wires views in small, reviewable steps at Ben's direction. Ben makes the design decisions, tests each step in the browser and reports what breaks. Keep each step small enough for him to read and defend in review, and log each round in `docs/genai_log.md`. ML (`ml/`, synthetic data, training), debugging, docs and CLAUDE.md edits are unrestricted.
+- **Working mode (agreed 2026-11-13, revised 2026-11-14).** Default: the students write the web app code; Claude explains, gives short snippets and reviews. Exception (2026-11-14): for Ben's S08–S12 booking rework, Claude builds templates and wires views in small, reviewable steps at Ben's direction. Ben makes the design decisions, tests each step in the browser and reports what breaks. Keep each step small enough for him to read and defend in review, and log each round in `docs/genai_log.md`. ML (`source/ml/`, synthetic data, training), debugging, docs and CLAUDE.md edits are unrestricted.
 - **The business must read as B2C:** households and owner-run small premises renting robots per job or week. Avoid "client" and "enterprise" framing in copy and docs.
 - Grading weights are roughly 50% e-commerce breadth/depth, 20% ML (sklearn classification/regression in joblib driving a business decision) and 30% UI.
 - Use function-based views (the course style, Lecture 13), not CBVs.
 - Customers see a friendly skill-pack summary. The full `policy_conditioning` JSON is staff-only.
-- Known open items: M1 and M4 score ~100% because the synthetic data is too clean (a planned fix is LLM-paraphrased descriptions in `ml/generate_data.py`). Market sizing and competitor names in `docs/business_model.md` are TODO; don't invent numbers without a source.
+- Known open items: M1 and M4 score ~100% because the synthetic data is too clean (a planned fix is LLM-paraphrased descriptions in `source/ml/generate_data.py`). Market sizing and competitor names in `docs/business_model.md` are TODO; don't invent numbers without a source.
 
 ## Commands
 
@@ -33,7 +33,7 @@ python manage.py test planner.tests.DecomposerTests.test_tight_budget_is_flagged
 
 Demo logins: `demo / demopass123` (customer) and `staff / staffpass123` (staff panel at `/staff/`).
 
-Retrain the ML models (from `ml/`): `python generate_data.py` then `python train_models.py`. Generated CSVs in `ml/data/` are gitignored. The output joblib files are written straight into `source/src/botcierge/planner/mlmodels/` and are committed.
+Retrain the ML models (from `source/ml/`, which is inside the submission zip on purpose so markers see the training code): `python generate_data.py` then `python train_models.py`. Generated CSVs in `source/ml/data/` are gitignored. The output joblib files are written straight into `source/src/botcierge/planner/mlmodels/` and are committed.
 
 Build the submission zip: `python scripts/package_submission.py PP01`. It needs `docs/PP01.docx` to exist and writes `dist/PP01.zip`, leaving out venv, `.git`, `db.sqlite3` and media.
 
@@ -51,7 +51,7 @@ There is no linter or formatter configured.
 
 Each joblib file is a bundle dict `{"model", "features", "labels", "metrics"}`, loaded once per process through `lru_cache` from `settings.ML_MODEL_DIR`. M2–M5 share one structured feature row. Column order comes from the bundle's `features`.
 
-**Label vocabulary is duplicated and must stay in sync:** `ml/taxonomy.py` (training) and `source/src/botcierge/catalog/taxonomy.py` (Django `choices`). The models predict these exact strings, so a new category, platform, add-on or skill pack means editing both files, retraining, and usually updating `seed_demo` and `SUBTASK_TEMPLATES` in the decomposer.
+**Label vocabulary is duplicated and must stay in sync:** `source/ml/taxonomy.py` (training) and `source/src/botcierge/catalog/taxonomy.py` (Django `choices`). The models predict these exact strings. Task categories and platforms are fixed in code: a new one means editing both files, retraining, and updating `seed_demo`, `TASK_PLATFORMS` and `SUBTASK_TEMPLATES`. Which robots can be booked for a task type is per robot (`RobotModel.task_categories`, staff-editable in A03, seeded from `TASK_PLATFORMS` by platform); `eligible_robots()` uses it, while M2 still predicts a platform as trained. Add-on and skill pack codes are rows staff can create (A05, `/staff/addons/`, `/staff/skill-packs/`); the ML only recommends a code after it is added to `source/ml/taxonomy.py` and retrained, and `/staff/recommendation-models/` shows which codes each model knows. Skill packs are offered on the booking page by `SkillPack.task_categories` (seeded from `TASK_SKILL_PACKS`).
 
 **Apps:** `accounts` (registration, `CustomerProfile`), `catalog` (`RobotModel`, `AddOn`, `SkillPack`, `FleetUnit`, plus the `seed_demo` command), `planner` (above), `orders` (`Order`/`OrderItem`/`OrderStatusEvent`/`Payment`/`PromoCode`), `support` (`Review`, `SupportTicket`/`TicketMessage`), `staffpanel` (no models). The models in orders, support and staffpanel are complete, but many views are stubs that render `coming_soon.html` with a story ID. Stubs are marked `TODO(<story id>)`.
 

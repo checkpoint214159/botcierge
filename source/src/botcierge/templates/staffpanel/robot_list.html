@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Robots{% endblock %}
+{% block content %}
+{% include "staffpanel/_catalogue_tabs.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Robot models</h1>
+  <a href="{% url 'staffpanel:robot_new' %}" class="btn bc-btn btn-sm">Add a robot</a>
+</div>
+{% include "staffpanel/_issues.html" %}
+<div class="bc-card p-3 table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th></th><th>Robot</th><th>Platform</th><th>Task types</th><th class="text-end">Rate/day</th><th>Units</th><th>Live orders</th><th>Status</th><th></th></tr></thead>
+    {% for r in robots %}
+    <tr class="{% if not r.is_active %}text-muted{% endif %}">
+      <td>{% include "partials/robot_photo.html" with robot=r css="bc-frame-xs" %}</td>
+      <td><a href="{% url 'staffpanel:robot_edit' r.pk %}" class="fw-semibold">{{ r.name }}</a><div class="small text-muted">{{ r.manufacturer }}</div></td>
+      <td>{{ r.get_platform_display }}</td>
+      <td class="small">{{ r.category_names|join:", "|default:"none" }}</td>
+      <td class="text-end">S${{ r.daily_rate }}</td>
+      <td><a href="{% url 'staffpanel:fleet_list' %}?robot={{ r.pk }}">{{ r.n_bookable }} of {{ r.n_units }} bookable</a></td>
+      <td>{{ r.n_upcoming }}</td>
+      <td>{% if r.is_active %}<span class="badge bc-badge">Listed</span>{% else %}<span class="badge text-bg-secondary">Unlisted</span>{% endif %}</td>
+      <td class="text-end">
+        <form method="post" action="{% url 'staffpanel:robot_toggle' r.pk %}">{% csrf_token %}
+          <button class="btn btn-sm bc-btn-outline">{% if r.is_active %}Unlist{% else %}List{% endif %}</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="9" class="text-muted">No robots yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

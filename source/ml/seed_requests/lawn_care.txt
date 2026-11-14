@@ -1,0 +1,126 @@
+# lawn_care: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+mow lawn
+~ lawn mowing pls
+grass in front yard is knee high already
+~ front grass super long, almost to my knees
+~ the front yard grass is way overgrown
+need someone to cut the grass every 2 weeks
+~ fortnightly grass cutting
+going overseas for a month, can keep the lawn trimmed?
+~ away for 1 month, lawn needs maintaining while im gone
+~ we travel next month, need grass cut while away
+backyard grass overgrown, mosquitoes breeding
+~ long grass in the backyard and lots of mosquitoes
+trim the grass edges along the driveway
+~ edge the lawn near the driveway
+landed house garden, grass needs cutting
+~ semi-d with a garden, grass is long
+cow grass in my garden growing too fast in rainy season
+~ rainy season, my cow grass grows like mad
+mow the grass before the open house this weekend
+~ open house on sunday, lawn must look neat
+lalang growing in the garden, need cut
+my lawn is patchy and uneven, need regular mowing
+the grass around the swimming pool area needs cutting
+# ambiguous with pool_cleaning; the work is grass, so lawn_care
+cut the grass near the pool, its overgrown
+weekly lawn maintenance for bungalow
+~ bungalow lawn, every week
+the grass verge outside my house is long, town council slow
+keep the garden grass short so the kids can play football
+~ kids play soccer in the garden, keep grass short
+mow the turf
+cut grass
+~ grass cutting
+the lawn
+backyard needs mowing, got slope
+~ sloped backyard grass, needs cutting
+want the lawn to look like a golf course lol
+the grass is growing over the stepping stones
+~ grass covering the garden path stones
+lawn mowing for my terrace house, small patch
+~ small lawn at my terrace house
+grass too long, snakes might hide
+~ worried about snakes in the long grass
+regular grass cutting while my gardener retires
+~ my gardener stopped coming, need grass cut
+need lawn cut before CNY gathering in the garden
+~ garden party at CNY, mow the lawn before
+mow the grass in the front and back
+landlord says must keep garden tidy, grass is long
+the zoysia grass needs trimming
+mow every friday
+lawn has weeds and long grass
+~ weeds plus overgrown grass in the lawn
+cut the grass in my shophouse back courtyard
+my lawn mower broke, need a robot to mow
+~ lawnmower spoilt, can rent a mowing robot?
+the field behind our house is ours, grass is long
+grass is wet after rain but needs cutting
+long grass around the fence line
+~ grass along the fence too long
+the garden looks messy because grass uneven
+maintain the lawn while we renovate
+grass cutting for church compound lawn on saturday
+mulch the grass clippings, dont bag them
+the turf around the house is overgrown
+keep lawn neat weekly, 300 sqm
+~ 300 sqm lawn, weekly
+my dad used to mow but now hes old
+~ dad too old to mow the lawn now
+garden grass trim pls
+the lawn is turning yellow, need regular care and mowing
+grass growing into the drain
+can mow lawn on a slope near the retaining wall?
+pls cut the grass, the dog keeps losing his ball
+~ my dog cant find his ball in the long grass
+grass taller than my toddler
+front lawn and side garden
+need someone to mow and edge the lawn
+lawn upkeep for our holiday home
+~ holiday house lawn needs looking after
+grass is so long the neighbour complained
+~ neighbours complaining about my long grass
+mow the garden every 10 days
+cut the grass around the fruit trees
+the grass on the rooftop garden needs trimming
+lawn care
+lawn needs a haircut haha
+the backyard is a jungle
+~ my back garden turned into a jungle
+cut grass before the bbq party on saturday
+~ bbq this sat, need lawn mowed before
+trim grass at my kindergarten playground
+grass around the garden shed overgrown
+maintain the grass while we are away 3 weeks
+the lawn at our landed property, please mow
+mow it short
+grass very long after monsoon
+~ post monsoon, grass grew a lot
+can cut the grass at my semi d, kena warning from the neighbour
+mow the lawn and trim around the trees and flower beds
+~ mow lawn, trim near trees and flowerbeds
+grass in garden 1m tall, help
+garden grass cutting weekly, small patch only
+the lawn at the back is uneven and too long, my kids trip over
+~ backyard lawn long and bumpy, kids keep tripping
+need someone to cut grass monthly
+lawn mowing for corner terrace
+garden overgrown after we left it for 3 months
+~ left the garden untouched 3 months, grass overgrown
+the grass at the side of the house is overgrown
+trim the grass along the edges of the pool deck and garden
+grass growing into the flower beds
+mow the lawn on the slope behind my house weekly
+keep my lawn short during the rainy season
+grass cutting for our childcare centre garden
+~ childcare garden, need grass cut
+mow lawn, 2 times a month
+cut the grass so we can have a picnic on the lawn
+the lawn in the courtyard needs trimming
+grass is up to the windows, embarrassing
+~ grass so long it reaches the windows
+# multi-request messages: labelled by the main job
+mow the lawn and maybe skim the pool also

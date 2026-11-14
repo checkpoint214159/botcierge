@@ -1,0 +1,8 @@
+{% if issues %}
+<div class="bc-card p-3 mb-3">
+  <div class="bc-k mb-1">Needs attention</div>
+  <ul class="small mb-0 ps-3">
+    {% for i in issues %}<li class="text-{{ i.level }}{% if i.mine %} fw-semibold{% endif %}">{% if i.mine %}This item: {% endif %}{{ i.text }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}

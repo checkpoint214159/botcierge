@@ -1,0 +1,140 @@
+# floor_cleaning: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+vacuum and mop my 4 room HDB pls
+~ need someone to vacuum + mop 4rm hdb flat
+~ hdb 4-room, vacuum then mop, thanks
+mop floor
+floors very dirty after renovation, got cement dust everywhere
+~ reno just finished and the whole floor is covered in fine dust
+~ post-renovation dust on all floors, need a proper clean
+my cat sheds like crazy, fur all over the sofa area and under the bed
+~ cat hair everywhere esp under bed, pls vacuum
+can the robot vacuum the whole condo every week while im at work
+~ weekly vacuum of my condo during office hours
+deep clean before CNY!!
+~ CNY spring cleaning, floors need to be spotless
+~ want to do the floors properly before chinese new year visiting
+the kitchen floor is sticky and oily, need a good scrub
+~ oily kitchen tiles, very sticky, scrub pls
+moving out next week, landlord very strict, floors must be clean for handover
+~ end of lease, need floors cleaned before handing keys back
+~ handover inspection next tues, floor must be spotless or lose deposit
+just collected keys to my BTO, want floors cleaned before furniture comes
+~ new BTO flat, dusty floors, clean before the movers arrive
+sweep and mop the shop floor after closing
+~ small cafe, mop the floor every night after we close
+parquet floor, pls dont use too much water
+~ wooden floor, light damp mop only
+toddler drops food everywhere, need daily vacuuming of the dining area
+~ my 2 yr old makes a mess at every meal, floor near dining table needs vacuuming daily
+carpet in master bedroom smells, can vacuum and shampoo?
+vinyl floor got muddy footprints after the rain
+~ muddy shoe prints all over the vinyl floor
+hair everywhere in the bathroom and bedroom, 3 of us have long hair
+helper going back for home leave 2 weeks, need someone to do the floors
+~ my helper is on leave for 2 wks, need floors vacuumed and mopped meanwhile
+clean the floor
+vaccum my room
+~ vacum bedroom pls
+marble floor in living room very dull, can polish?
+dog peed on the rug, need clean and vacuum the rest of the house too
+house is very dusty, got sneezing allergy
+~ dust allergy acting up, need dust vacuumed off all floors
+mop the tiles in the corridor and kitchen, sand from the beach trip
+whole house floor, 3 storey landed, every saturday
+~ terrace house 3 floors, floors cleaned every sat
+cleaning after my son's birthday party, cake and confetti on the floor
+~ party last night, crumbs and confetti all over the living room floor
+the grout between floor tiles is black, need scrubbing
+want to maintain the floors twice a week, just routine
+~ routine floor cleaning 2x a week
+need floors vacuumed, budget tight
+pls clean floors of 3rm flat, elderly parents cant do it anymore
+~ parents' 3-room flat, they're old and can't mop anymore
+ants everywhere because of crumbs, vacuum under all the furniture
+spilled a whole bag of rice on the kitchen floor lol
+office pantry floor, small, need mopping 3 times a week
+studio apartment floor clean, 35 sqm
+just wanna get rid of the dust bunnies under the bed and sofa
+floor got sand from the kids playground shoes
+balcony floor tiles have bird poop and dust
+~ bird droppings on my balcony floor, need a scrub
+mopping the living room and bedrooms please, we just moved in
+~ move-in clean for floors, all rooms
+my hair salon floor is full of cut hair by end of day
+vacuum + mop daily, i work long hours
+~ need daily floor cleaning cos im never home
+clean up the floor after the plumber left, muddy water everywhere
+my flat floor is very dusty after haze season
+need help with the floors, 5 room hdb, we have 2 dogs
+~ 5-rm flat with two dogs, floors always hairy
+can sweep the garage floor? lots of leaves and dirt
+floor near the shoe rack always got dirt and sand
+upstairs carpet + downstairs tiles, whole house
+the house smells, think the floor needs a proper wash
+after the flood from washing machine leak, floor need cleaning and drying
+clean all floors before my in-laws visit on sunday
+~ in-laws coming this weekend, floors must look clean
+baby starting to crawl, want floor super clean everyday
+~ crawling baby at home, floors need to be clean daily
+dust from the construction next door keeps coming in
+tiles very dirty, been months since last mop
+~ havent mopped in months, tiles filthy
+kopitiam stall area floor oily
+cleaning the floors in my shophouse office, 2 levels
+pls vac the sofa area and hallway
+my mum's flat in tampines, just floors, every 2 weeks
+spot clean coffee spill on the carpet and the area around it
+glitter everywhere from kids art project, on the floor
+pls get the floor clean, im exhausted
+need floors done tmr morning
+condo unit 1200 sqft, all wood floors
+floors in the gym room have sweat marks
+clean the floor of my small bakery before opening
+hdb flat floor clean, got wheelchair user at home so need clear path
+~ floor clean for my dad's flat, he uses a wheelchair
+get rid of pet hair on the floor
+~ remove dog fur from floors
+bathroom floor has soap scum and is slippery
+the white tiles look grey now
+~ white floor tiles turned greyish, need deep clean
+after mahjong session the floor full of peanut shells
+weekly floor maintenance for airbnb unit between guests
+~ clean floors between airbnb guests every week
+hallway and living room vacuum
+i keep stepping on crumbs, pls help
+vacuum the stairs and landing too
+floor still has paint drips from the painter
+can deep clean all floors in landed house 5 bedrooms
+clean floors
+mop everywhere except the study
+vacuum the carpet in the kids room, lego pieces be careful
+# ambiguous with tidying; picked floor_cleaning because the ask is about dirt on the floor
+clean up after the party, floor is sticky from spilled drinks
+the place is a mess after the renovation, dust and debris on floor
+can mop the floor 2 times a week? got 3 cats and 1 dog
+~ 3 cats + a dog, floors need mopping twice weekly
+the floor got black marks from the office chair wheels
+chope your robot for this sat, need floors vacuumed b4 relatives come
+~ relatives visiting sat, vacuum floors before that
+jialat, the floor so dusty after the wind blew in from the window
+my flat is near the construction, floor dusty every day, need vacuum daily
+mop the condo floor and also vacuum the rug pls
+~ vacuum the rug then mop the rest of the condo
+small 2 bedder, just need floors done weekly, nothing else
+the tiles in the kitchen and toilets are grimy
+hi can help clean my floors, i sprained my back
+~ back injury, cant mop, need floors done
+dusty floor
+sweep up the leaves that blew into the living room
+floor full of fur and dust balls, pls vacuum asap
+i rent out rooms, need common area floors cleaned weekly
+~ room rental flat, common area floors weekly
+vacuum the whole house and wipe the floor
+mop up the water from the aircon leak and clean the floor
+clean floors of the tuition centre after class
+~ tuition centre floor after lessons
+# multi-request messages: labelled by the main job
+vacuum and mop the whole flat, and wipe the windows if got time
+mop the floors and maybe tidy the toys a bit

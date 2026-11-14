@@ -1,0 +1,3 @@
+{# Whether the live model can recommend this code. Not learned = customers can still pick it by hand. #}
+{% if learned %}<span class="badge text-bg-success-subtle text-success-emphasis border" title="The recommender suggests this">recommended</span>
+{% else %}<span class="badge text-bg-warning-subtle text-warning-emphasis border" title="Customers can pick it, but the recommender won't suggest it until it's retrained">not learned</span>{% endif %}

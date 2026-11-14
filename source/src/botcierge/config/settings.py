@@ -139,7 +139,7 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "planner:start"
 LOGOUT_REDIRECT_URL = "catalog:home"
 
-# Folder holding the persisted joblib models (see ml/train_models.py at repo root)
+# Folder holding the persisted joblib models (see source/ml/train_models.py)
 ML_MODEL_DIR = BASE_DIR / "planner" / "mlmodels"
 
 # Default primary key field type

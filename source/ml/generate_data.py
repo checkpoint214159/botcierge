@@ -1,15 +1,27 @@
 """Generate synthetic training data for the Botcierge models.
 
-Outputs (in ml/data/):
+Outputs (in source/ml/data/):
   task_descriptions.csv  free-text chore descriptions -> task_category   (M1)
+                         with a `split` column (train/test) and a `source`
+                         column (seed, paraphrase, augmented, template)
   task_specs.csv         structured task specs -> platform, add-ons,
                          skill pack, robot-hours                          (M2-M5)
 
-The labelling rules below stand in for what an operations team would decide
-by hand on historical jobs. Noise is injected so the models have to
+M1 text comes from two sources:
+  1. seed_requests/<category>.txt: hand-written customer requests (written by
+     an LLM, Claude, from general knowledge of how people phrase requests to
+     cleaners, handymen and home-service apps in Singapore; no posts were
+     copied). Each seed may be followed by "~" paraphrases of it.
+  2. The old template generator (TEXT_SLOTS below), kept as a smaller share.
+A quarter of the seed groups per category are held out as the test set. Only
+the original seed text of those groups is used, and their paraphrases are
+dropped, so no reworded copy of a test request is ever trained on.
+
+The labelling rules for M2-M5 stand in for what an operations team would
+decide by hand on historical jobs. Noise is injected so the models have to
 generalise rather than memorise a lookup table.
 
-Run:  python ml/generate_data.py
+Run:  python source/ml/generate_data.py
 """
 from pathlib import Path
 import random
@@ -27,6 +39,10 @@ OUT = Path(__file__).parent / "data"
 # --------------------------------------------------------------------------
 # M1: free-text descriptions
 # --------------------------------------------------------------------------
+# --- M1 part 1: template generator (the original approach) ---
+# Fills opener + verb + object + context + filler from fixed word lists. Easy to
+# separate, so on its own it gave a meaningless ~100% test score. It is now only a
+# small share of the training data and is never used for testing.
 TEXT_SLOTS = {
     "floor_cleaning": {
         "verbs": ["vacuum", "mop", "clean", "sweep", "scrub", "wash", "deep clean"],
@@ -110,6 +126,107 @@ def gen_descriptions(n_per_class: int = 400) -> pd.DataFrame:
     rows = [{"description": make_description(c), "task_category": c}
             for c in TASK_CATEGORIES for _ in range(n_per_class)]
     return pd.DataFrame(rows).sample(frac=1, random_state=SEED).reset_index(drop=True)
+
+
+# --- M1 part 2: hand-written seed requests, paraphrases and augmentation ---
+SEED_DIR = Path(__file__).parent / "seed_requests"
+TEST_GROUP_FRACTION = 0.25    # share of seed groups per category held out for testing
+TEMPLATES_PER_CLASS = 100     # template rows kept per class, so they are a minority
+AUGMENTED_PER_ROW = 2         # noisy copies made of each training seed/paraphrase
+
+# Separate RNG for everything in this section. The global `random` and `rng` are
+# shared with gen_specs(), so drawing from them here would change task_specs.csv
+# (the M2-M5 data) even though M2-M5 have nothing to do with the text.
+text_rng = random.Random(SEED)
+
+
+def load_seed_requests() -> pd.DataFrame:
+    """Read seed_requests/<category>.txt into rows of (group, category, text, source).
+
+    A plain line starts a new group (one customer request). A "~" line is a
+    paraphrase of the seed above it and joins that group, so the split below can
+    keep a seed and its rewordings on the same side.
+    """
+    rows = []
+    for category in TASK_CATEGORIES:
+        group = -1
+        for line in (SEED_DIR / f"{category}.txt").read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("~"):
+                rows.append({"group": f"{category}-{group}", "task_category": category,
+                             "description": line[1:].strip(), "source": "paraphrase"})
+            else:
+                group += 1
+                rows.append({"group": f"{category}-{group}", "task_category": category,
+                             "description": line, "source": "seed"})
+    return pd.DataFrame(rows)
+
+
+def pick_test_groups(corpus: pd.DataFrame) -> set:
+    """Hold out TEST_GROUP_FRACTION of the groups in each category (stratified by class)."""
+    test = set()
+    for category in TASK_CATEGORIES:
+        groups = sorted(corpus.loc[corpus["task_category"] == category, "group"].unique())
+        text_rng.shuffle(groups)
+        test.update(groups[:round(len(groups) * TEST_GROUP_FRACTION)])
+    return test
+
+
+# How people shorten words when typing on a phone.
+CHAT_ABBREVIATIONS = {"please": "pls", "you": "u", "your": "ur", "tomorrow": "tmr", "before": "b4",
+                      "because": "cos", "with": "w", "thanks": "thx", "need": "nd", "the": "da",
+                      "and": "n", "my": "me", "every": "evry", "weekend": "wkend"}
+
+
+def add_noise(text: str) -> str:
+    """Cheap, deterministic typing noise: real users mistype, skip words and shout.
+
+    Applies one or two of: swap two adjacent letters, drop a letter, drop a word,
+    chat-style abbreviations, strip punctuation. (No case changes: TF-IDF lower-cases
+    everything, so they would teach the model nothing.)
+    """
+    for _ in range(text_rng.choice([1, 1, 2])):
+        words = text.split()
+        op = text_rng.choice(["swap", "drop_char", "drop_word", "abbrev", "no_punct"])
+        long_words = [i for i, w in enumerate(words) if len(w) > 3]
+        if op in ("swap", "drop_char") and long_words:
+            i = text_rng.choice(long_words)
+            w = words[i]
+            j = text_rng.randrange(len(w) - 1)
+            words[i] = w[:j] + w[j + 1] + w[j] + w[j + 2:] if op == "swap" else w[:j] + w[j + 1:]
+        elif op == "drop_word" and len(words) > 3:
+            del words[text_rng.randrange(len(words))]
+        elif op == "abbrev":
+            words = [CHAT_ABBREVIATIONS.get(w.lower(), w) for w in words]
+        elif op == "no_punct":
+            words = [w.strip(".,!?") for w in words]
+        text = " ".join(w for w in words if w)
+    return text
+
+
+def build_m1_dataset(templates: pd.DataFrame) -> pd.DataFrame:
+    corpus = load_seed_requests()
+    test_groups = pick_test_groups(corpus)
+    in_test = corpus["group"].isin(test_groups)
+
+    # Test: only the original wording of held-out seeds; their paraphrases are thrown away.
+    test = corpus[in_test & (corpus["source"] == "seed")].assign(split="test")
+
+    # Train: the other seeds and their paraphrases, plus noisy copies of both.
+    train = corpus[~in_test].assign(split="train")
+    noisy = train.loc[train.index.repeat(AUGMENTED_PER_ROW)].copy()
+    noisy["description"] = [add_noise(t) for t in noisy["description"]]
+    noisy["source"] = "augmented"
+
+    # A minority of template rows keeps vocabulary like "facade" or "perimeter" in play.
+    tmpl = (templates.groupby("task_category").head(TEMPLATES_PER_CLASS)
+            .assign(split="train", source="template", group=""))
+
+    cols = ["description", "task_category", "split", "source", "group"]
+    out = pd.concat([train, noisy, tmpl, test])[cols]
+    return out.sample(frac=1, random_state=SEED).reset_index(drop=True)
 
 
 # --------------------------------------------------------------------------
@@ -264,10 +381,15 @@ def gen_specs(n: int = 6000) -> pd.DataFrame:
 
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
-    d = gen_descriptions()
+    # gen_descriptions() must still run first with the default size: it advances the
+    # shared random state that gen_specs() continues from, which keeps task_specs.csv
+    # identical to earlier runs. Only a subsample of its rows is used.
+    templates = gen_descriptions()
+    d = build_m1_dataset(templates)
     d.to_csv(OUT / "task_descriptions.csv", index=False)
     s = gen_specs()
     s.to_csv(OUT / "task_specs.csv", index=False)
     print(f"task_descriptions.csv: {len(d)} rows")
+    print(d.groupby(["split", "source"]).size().to_string())
     print(f"task_specs.csv: {len(s)} rows")
     print(s["platform"].value_counts().to_string())

@@ -27,7 +27,6 @@ from django.db import transaction
 from django.db.models import Q
 
 from catalog.models import AddOn, RobotModel, SkillPack
-from catalog.taxonomy import TASK_PLATFORMS
 
 from .models import Recommendation, TaskRequest, TaskSpec
 from .pricing import build_quote
@@ -90,12 +89,13 @@ def predict_category(description: str) -> tuple[str, float]:
 
 
 def eligible_robots(tr: TaskRequest, category: str | None = None):
-    """Robots that can do this job: a platform suited to the task type (TASK_PLATFORMS) plus
-    the hard constraints (payload, stairs, outdoor). Shared by the ML pick below and the
-    customer's own choice on the booking page."""
+    """Robots that can do this job: staff have marked the robot for this task type
+    (RobotModel.task_categories, A03) and it meets the hard constraints (payload, stairs, outdoor).
+    Shared by the ML pick below and the customer's own choice on the booking page."""
     category = category or tr.spec.task_category
-    qs = RobotModel.objects.filter(is_active=True, max_payload_kg__gte=tr.payload_kg,
-                                   platform__in=TASK_PLATFORMS.get(category, []))
+    active = RobotModel.objects.filter(is_active=True, max_payload_kg__gte=tr.payload_kg)
+    # task types are stored comma-separated, so match them in Python (the catalogue is small)
+    qs = active.filter(pk__in=[r.pk for r in active if category in r.category_list])
     if tr.has_stairs:
         # wheeled bases are allowed because they can take a stair kit add-on
         qs = qs.filter(Q(can_climb_stairs=True) | Q(platform__in=["wheeled_amr", "mobile_manipulator"]))

@@ -1,0 +1,132 @@
+# window_cleaning: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+clean windows
+~ window cleaning pls
+my windows are so dirty i cant see out
+~ cant even see the view, windows filthy
+high floor condo, outside of the windows very dusty, cant reach
+~ 30th floor unit, exterior glass dirty and i cant reach outside
+~ the outside of my condo windows is grimy and too high to reach safely
+balcony glass panels have water stains
+~ water marks all over the balcony glass
+sliding door glass got kids handprints all over
+~ little fingerprints all over the glass sliding door
+clean the shop front glass every morning before opening
+~ shopfront window needs wiping daily
+windows streaky after the rain
+~ rain left streaks on all my windows
+want to clean all the windows before CNY
+~ CNY coming, windows need cleaning
+the windows in my hdb are the old louvre type, very dusty
+~ louvre windows in old hdb flat, dusty and hard to clean
+glass railings on the balcony need wiping
+need someone to do the windows, im scared of heights
+~ afraid of heights, cant clean the outside of the windows myself
+bay window and the glass around it
+the skylight in my landed house is covered in leaves and grime
+~ roof skylight dirty, can see leaves stuck on top
+shower glass screen has hard water stains
+~ glass shower door has limescale, pls clean
+my cafe has floor to ceiling glass, need cleaning weekly
+~ cafe glass walls, weekly clean
+mirrors and windows in the living room
+window grilles and the glass behind it
+my car porch glass roof is dirty
+clean the glass panels on the staircase
+windows of my 5 room flat, inside and out
+~ all windows of 5rm hdb, both sides
+after the haze the windows have a layer of dust
+pls clean windows on 22nd floor, cannot lean out
+~ 22nd floor, not safe to clean outside windows myself
+the glass facade of my office looks dull
+~ office glass frontage looks dull, need polish
+windows have bird poop on the outside
+~ bird droppings on the outside of the window
+fly screens and windows need cleaning
+windows only, no floors
+glass door to the balcony is cloudy
+~ balcony glass door cloudy and smudged
+need windows wiped before guests come on saturday
+~ guests coming sat, windows must be clean
+the windows face the main road and get black from car exhaust
+~ facing the expressway, windows always black with soot
+can your robot climb the window and clean? 18th floor
+~ is there a robot that sticks to the glass and cleans it? floor 18
+window cleaning monthly for my condo
+~ monthly window cleaning
+streak free windows pls, the last cleaner left marks
+renovation finished, windows have paint and sticker residue
+~ new windows still have stickers and paint spots after reno
+display window of my boutique, need it sparkling
+clean the glass partition in my home office
+windows of my shophouse, 3 storeys, front facade
+the big picture window in the living room
+aquarium shop front glass, need clean
+balcony glass very dusty from construction nearby
+~ construction next door, balcony glass covered in dust
+my windows have mould at the corners
+the casement windows hard to reach the outside
+polish the glass
+squeegee the windows
+all the glass in the house
+pls do windows and window sills
+~ windows plus sills, dusty
+the kitchen window is oily from cooking
+~ greasy kitchen window glass
+can clean the sunroom glass walls
+dirty windows before photoshoot for property listing
+~ selling flat, need windows clean for listing photos
+the glass on my gate is dirty
+clean the window panes in the bedrooms
+windows got salt spray because near the sea
+~ seaside condo, salt marks on windows
+need high window cleaned in the double volume living room
+~ double-height living room, top windows unreachable
+my child drew on the window with crayon
+wipe the glass table and the windows
+# ambiguous with floor_cleaning; picked window_cleaning because glass is the main ask
+clean the balcony, mostly the glass panels are dirty
+windows and mirrors look smudgy
+weekly window clean for my clinic entrance
+condo window cleaning every 2 months
+i want the windows clean but dont want to climb a ladder
+~ no ladder at home, need windows done
+cleaning outside windows safely for 15th floor
+the glass of my shop door has tape marks
+spotless windows for wedding at home
+~ wedding at home, windows must be spotless
+cobwebs and dust on the windows
+pls clean window tracks and glass
+~ window tracks full of dust, glass dirty too
+just the outside glass of the windows
+window clean asap
+windows foggy and dirty
+2 big windows and 1 sliding door
+our house has a lot of glass, need help keeping it clean
+windows got oily film from the hawker centre nearby
+can clean all the windows in my landed house? got many
+~ landed house with lots of windows, need them cleaned
+the glass panels on my condo balcony and the windows of the master bedroom
+the outside panes are so dirty the light doesnt come in
+~ windows so dirty the room is dark
+cleaning glass windows of the tuition centre
+our glass wall has dog nose prints lol
+~ dog smudges on the glass door
+pls clean windows, budget tight
+window cleaning before chinese new year visiting
+i stay alone on 25th floor, cant clean the outer side of the windows
+~ live alone 25th floor, outer windows impossible to clean
+the windows of my studio are smudgy
+stained glass window needs gentle cleaning
+clean window glass and frames, dusty from haze
+the hdb windows got black mould spots on the glass edges
+the glass roof over the patio is covered in leaves and dirt
+window cleaning for a 4 room flat
+~ 4rm hdb windows
+balcony windows are cloudy from the sea air
+wipe all the glass in the living room
+need the windows cleaned once a quarter
+~ quarterly window cleaning
+# multi-request messages: labelled by the main job
+clean all the windows and maybe mop the balcony

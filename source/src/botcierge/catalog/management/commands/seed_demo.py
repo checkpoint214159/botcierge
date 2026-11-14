@@ -17,6 +17,7 @@ from django.core.management.base import BaseCommand
 
 from accounts.models import Address, CustomerProfile
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
+from catalog.taxonomy import TASK_PLATFORMS, TASK_SKILL_PACKS
 from orders.models import PromoCode
 
 # name, slug, platform, manufacturer, rate (S$/day), indoor, outdoor, stairs, payload kg, battery h, noise dB, tagline
@@ -125,6 +126,7 @@ class Command(BaseCommand):
                 description=tag + ".", daily_rate=Decimal(rate), indoor=indoor, outdoor=outdoor,
                 can_climb_stairs=stairs, max_payload_kg=Decimal(payload), battery_hours=Decimal(str(batt)),
                 noise_db=noise, is_active=True, stock_image=f"img/robots/{slug}.jpg",
+                task_categories=",".join(c for c, plats in TASK_PLATFORMS.items() if plat in plats),
                 image_credit=f"Photo: {author}, {licence}, via Wikimedia Commons",
                 image_credit_url=credit_url))
             robots[slug] = r
@@ -138,8 +140,10 @@ class Command(BaseCommand):
                 name=name, daily_rate=Decimal(rate), compatible_platforms=plats))
 
         for code, name, fee, plats, summary, cond in SKILL_PACKS:
+            categories = ",".join(c for c, packs in TASK_SKILL_PACKS.items() if code in packs)
             sp, _ = SkillPack.objects.update_or_create(code=code, defaults=dict(
-                name=name, flat_fee=Decimal(fee), summary=summary, default_conditioning=cond))
+                name=name, flat_fee=Decimal(fee), summary=summary, default_conditioning=cond,
+                task_categories=categories))
             sp.compatible_robots.set([r for r in robots.values() if r.platform in plats])
 
         PromoCode.objects.get_or_create(code="WELCOME10", defaults={"percent_off": 10})

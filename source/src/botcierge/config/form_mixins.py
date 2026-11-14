@@ -9,7 +9,10 @@ class BootstrapFormMixin:
         for field in self.fields.values():
             w = field.widget
             # checkbox/radio lists (CheckboxSelectMultiple, RadioSelect) are not Select subclasses,
-            # so without this they fell through to "form-control" and rendered as text-box bars
+            # so without this they fell through to "form-control" and rendered as text-box bars.
+            # Note: rendering a whole CheckboxSelectMultiple with {{ field }} also puts this class on its
+            # wrapper <div> (Django 5), which draws one big checkbox behind the list. Render the options
+            # yourself (as booking.html does) or use a multi-select instead (staff forms use chips).
             if isinstance(w, (forms.CheckboxInput, forms.CheckboxSelectMultiple, forms.RadioSelect)):
                 css = "form-check-input"
             elif isinstance(w, forms.Select):

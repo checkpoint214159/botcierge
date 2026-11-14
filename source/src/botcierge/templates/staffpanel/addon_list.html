@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Attachments{% endblock %}
+{% block content %}
+{% include "staffpanel/_catalogue_tabs.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Attachments</h1>
+  <a href="{% url 'staffpanel:addon_new' %}" class="btn bc-btn btn-sm">Add an attachment</a>
+</div>
+{% include "staffpanel/_issues.html" %}
+<div class="bc-card p-3 table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Attachment</th><th>Fits</th><th class="text-end">Rate/day</th><th>Recommender</th><th>Status</th><th></th></tr></thead>
+    {% for a in addons %}
+    <tr class="{% if not a.is_active %}text-muted{% endif %}">
+      <td><a href="{% url 'staffpanel:addon_edit' a.pk %}" class="fw-semibold">{{ a.name }}</a><div class="small text-muted font-monospace">{{ a.code }}</div></td>
+      <td class="small">{{ a.platform_names|join:", "|default:"All platforms" }}</td>
+      <td class="text-end">S${{ a.daily_rate }}</td>
+      <td>{% include "staffpanel/_ml_badge.html" with learned=a.learned %}</td>
+      <td>{% if a.is_active %}<span class="badge bc-badge">Offered</span>{% else %}<span class="badge text-bg-secondary">Hidden</span>{% endif %}</td>
+      <td class="text-end">
+        <form method="post" action="{% url 'staffpanel:addon_toggle' a.pk %}">{% csrf_token %}
+          <button class="btn btn-sm bc-btn-outline">{% if a.is_active %}Hide{% else %}Offer{% endif %}</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No attachments yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

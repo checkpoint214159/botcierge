@@ -1,0 +1,147 @@
+# home_patrol: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+watch my house while im on holiday
+~ going on vacation, need someone to watch the house
+~ guard my home while we are overseas
+there were break ins in my estate, need security at night
+~ burglaries nearby, want night security
+~ few houses on my street got broken into, need patrol
+patrol the compound at night
+~ night patrol around the compound
+~ walk around the compound at night and check
+check that the doors and windows are locked
+~ make sure all doors locked
+~ check locks on doors and windows every night
+send me alerts if someone comes into the garden
+~ alert me if anyone enters the garden
+~ notify me when there's an intruder in my yard
+monitor my shop at night
+~ keep watch over my shop after closing
+~ night security for my small shop
+going back to hometown for CNY, house empty for 10 days
+~ house will be empty over CNY, need monitoring
+~ away 10 days for CNY, watch the house
+security patrol for my landed property
+~ patrol my landed house
+~ landed property security rounds
+check the gate and perimeter
+~ check perimeter fence and gate
+someone keeps stealing my parcels at the door
+~ parcels keep getting stolen from my doorstep
+~ porch pirates taking my deliveries
+need cameras moving around the house while away
+~ mobile camera around my house when im not home
+guard the warehouse at my shophouse
+~ watch my shophouse storeroom at night
+house sitting for 2 weeks
+~ need a house sitter for two weeks
+patrol
+~ patrolling
+check for water leaks and anything unusual while away
+~ while away, check for leaks or anything weird
+monkeys keep coming into my house, need monitoring
+~ monkeys break into my kitchen, want something to watch
+watch the property
+~ monitor property
+night watch
+~ night watchman
+the house next door got robbed, im scared
+~ neighbour got burgled, worried about my home
+check on my house every day while i travel for work
+~ business trip for a week, check house daily
+security for my construction site at the back of my house
+watch over the garden and the gate at night
+~ guard garden and gate overnight
+make sure nobody climbs over my fence
+~ stop people climbing my fence
+patrol around my bungalow
+need security while the renovation workers are in the house
+~ want to keep an eye on contractors working in my house
+~ reno workers in my place, need monitoring
+monitor the house while the family is at work
+~ keep watch at home during working hours
+check that the lights and aircon are off
+burglar alarm robot
+~ robot that works like a burglar alarm
+watch for intruders
+~ intruder watch
+our dog is home alone, keep an eye on the house and him
+# borderline: pet watching is not in the catalogue; closest is monitoring the home
+watch my cat while im away for the weekend
+patrol the shop after hours, had a break in last month
+~ shop got broken into last month, need after-hours patrol
+security check every night at 11pm
+~ nightly security round at 11pm
+somebody has been loitering outside my gate
+~ strange person hanging around my gate
+watch the car porch, my car got scratched
+~ someone keyed my car in the porch, want monitoring
+guard the house
+~ home security
+keep the house safe while we go to genting
+check windows closed when it rains while we away
+~ make sure windows are shut if it rains while we're away
+watch the back door
+monitor the empty unit while it's on the market
+~ empty flat for sale, need monitoring
+patrol my kampung house at night
+security for our wedding gifts during the party
+night security for the compound
+check doors locked
+house will be empty during my hospital stay
+~ in hospital for a week, house empty
+remote monitoring of my holiday home
+~ check on my holiday house remotely
+look around the house and send me photos
+~ walk around house and send pictures
+someone keeps throwing rubbish in my compound at night
+~ who keeps dumping trash in my yard at night, want to catch them
+monitor the perimeter
+check the house
+watch over the garage
+patrol garden
+my wife is alone at home at night when i do night shift, want extra security
+~ i work night shift, want more security for my wife at home
+perimeter check during the week we are away
+make sure the house is safe
+guard my shop
+anyone entering the backyard, record it
+~ record anybody who comes into the backyard
+going to japan for 2 weeks, need someone to keep watch on my landed house
+~ japan trip 2 weeks, watch my landed home
+check the house at night and alert me if any door is open
+~ alert me at night if a door is open
+patrol the shophouse after we close, got thefts on the street
+~ shophouse after closing, thefts on our street, patrol pls
+my condo unit empty while we renovate, need monitoring
+~ unit empty during reno, monitor it
+can patrol the garden and driveway every night
+~ nightly rounds of driveway and garden
+want a security robot for my semi d
+check that nobody enters my storeroom at the back
+someone tried to open my gate last night, scared
+~ last night someone tried my gate, need security
+monitor my house while i'm in hospital for surgery
+watch for snakes and intruders in the compound at night
+house empty during the school holidays trip, keep it safe
+~ school holiday trip, house empty, need security
+need security rounds of the perimeter every 2 hours at night
+~ perimeter check every 2 hrs overnight
+guard my mini mart at night
+patrol the house when no one home
+~ house patrol when nobody is home
+keep watch on the compound while we are at the wedding
+check my unit every day while i am overseas for 3 weeks
+watch the house at night pls
+security for my home while husband travels
+~ husband away on work trip, want home security
+make rounds and check doors and gates
+patrol the property during CNY holidays
+# multi-request messages: labelled by the main job
+watch the house while we're away and check the windows are closed
+patrol at night and also check the garden lights work
+away for a week, keep the house safe and check the mailbox
+guard my compound, there are stray dogs and maybe thieves
+keep an eye on the house
+security

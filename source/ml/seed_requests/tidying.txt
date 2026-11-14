@@ -1,0 +1,144 @@
+# tidying: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+tidy up
+~ tidy my place
+kids toys everywhere, need someone to pack them away every night
+~ toys all over the floor every evening, need them put back in the box
+~ my children leave their toys everywhere, pack up nightly
+fold the laundry
+~ fold clothes after washing
+~ help me fold the clothes, pile is huge
+just moved in, lots of boxes to unpack and organise
+~ moved into new flat, boxes everywhere need unpacking
+~ unpack and arrange stuff after the move
+the storeroom is a disaster, need it sorted
+~ store room very messy, sort and arrange
+declutter the kids room
+~ kids bedroom needs decluttering
+put away the dishes from the dish rack
+~ arrange the dried dishes back in the cabinet
+my house is so messy, I dont have time to tidy
+~ no time to tidy up, house messy
+organise the bookshelf by category
+~ sort my books on the shelves
+clothes all over the bedroom chair
+~ the chair in my room is covered in clothes
+helper on home leave, need someone to tidy the house daily
+~ maid going home for 2 weeks, need daily tidying
+the wardrobe is overflowing, sort out the clothes
+~ sort my wardrobe, too many clothes
+pick up the mess after the kids playdate
+~ playdate left the living room messy, toys and cushions everywhere
+clear the dining table and put things back
+~ dining table always cluttered, clear it
+after CNY, lots of goodies boxes and stuff to keep
+~ post CNY clean up, keep away the decorations and snack boxes
+sort the recycling and trash
+my study table is cluttered
+put shoes back on the shoe rack
+~ shoes everywhere at the door, arrange on rack
+organise the kitchen cabinets
+tidy up the living room before guests arrive
+~ guests coming, quick tidy of the living room
+lego all over the floor pls pick up
+~ pick up lego pieces from the floor
+put away groceries
+arrange the toys into the bins by type
+~ sort toys into the right bins
+need help sorting my late father's things
+~ going through my dad's belongings after he passed, need help sorting
+fold and put away the clothes for the whole family
+messy house after the weekend
+the garage is full of junk, need organising
+~ organise garage, too much stuff
+sort out stuff for donation
+~ separate things to donate
+tidy my teenage son's room, its a pigsty
+~ my son's bedroom is a mess
+organise the pantry shelves
+my airbnb needs resetting between guests, make bed, arrange things
+~ reset the airbnb unit after each guest, put things back
+put away the laundry
+cables and stuff all over the tv console
+organise
+my desk at home office is a mess
+clean up the toys
+~ toys clean up
+the house looks like a tornado hit it
+~ my place looks like a bomb went off
+arrange the shelves in my small shop
+~ restock and arrange shelves in my mama shop
+make the beds and tidy the bedrooms
+declutter before moving
+~ want to declutter before the move
+sort the mail and papers piling up
+pack up after the party
+# ambiguous with floor_cleaning; picked tidying because the mess is objects, not dirt
+clean up after the party, cups and plates everywhere
+the kids room is full of clothes and books on the floor
+~ clothes and books all over the kids room floor
+fold towels
+need someone to organise my closet
+~ closet organising
+put back the stuff on the floor into the right places
+help me unpack after renovation, everything was in boxes
+~ reno done, need to put everything back from the boxes
+tidy the bathroom counter, too many bottles
+stack the chairs and put away the table after gathering
+my parents hoard things, need help clearing the flat
+~ parents' flat full of old stuff, need decluttering
+put the books back on the shelf
+tidy up every evening after dinner
+~ evening tidy after dinner daily
+sort out my craft supplies
+organise the fridge
+toys and stuffed animals everywhere
+the children's playroom is a mess
+~ playroom very messy
+clear the clutter in the living room
+help pack things into boxes for moving
+~ packing for house move
+tidy up the house please, very messy
+arrange the cushions and blankets every day
+keep the house neat while i recover from surgery
+~ just had surgery, cant bend, need help keeping house neat
+arrange the shoes and bags at the entrance
+tidy
+pick up
+tidying the kids stuff daily
+the dishes are piling up in the sink
+~ dishes stacking up in sink, put them in dishwasher
+sort the laundry by colour
+spare room full of random stuff, sort it out
+~ spare room become dumping ground, sort it
+messy
+put away the christmas decorations
+clean up the kids art supplies after they finish
+everything is everywhere
+pls help keep away the toys and fold the kids clothes
+~ put toys away and fold kids clothes
+the house is cluttered, need things put back in place everyday
+wah my room damn messy, help arrange
+~ my room super messy, arrange it pls
+unpack my BTO boxes and arrange the kitchen
+~ moved into BTO, unpack boxes and set up kitchen
+sort and fold the clean laundry pile on the sofa
+~ laundry pile on sofa, sort and fold
+put away the shopping
+the toy room needs sorting, too many toys mixed up
+my wife wants the wardrobe arranged by colour
+pack up the CNY decorations and store them
+~ keep the CNY deco back in the storeroom
+my flat is cluttered with stuff from online shopping boxes
+tidy up the shoe cabinet
+bedroom messy, clothes on the bed and floor
+~ clothes all over my bed and floor
+sort the kids school books and stationery
+organise my home office shelves and files
+help me tidy before the landlord comes to inspect
+~ landlord inspection, tidy the flat
+put the clothes into the drawers
+reorganise the storeroom so i can find things
+# multi-request messages: labelled by the main job
+tidy the living room and put away the laundry, then vacuum if can

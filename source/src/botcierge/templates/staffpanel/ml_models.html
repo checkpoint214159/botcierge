@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Recommendation models{% endblock %}
+{% block content %}
+{% include "staffpanel/_catalogue_tabs.html" %}
+<h1 class="h4 mb-1">Recommendation models</h1>
+<p class="text-muted small mb-3">The five machine-learning models that turn a customer's request into a plan: task type, robot, attachments, skill pack and hours.
+  These run on our server when a plan is made. They are not the skill packs, which are the software that runs on the robot.</p>
+<p class="text-muted small mb-3">Below: how each one scored when it was trained, and whether it knows today's catalogue.
+  To retrain: from <code>source/ml/</code> run <code>python generate_data.py</code> then <code>python train_models.py</code>, then restart the server.</p>
+
+{% include "staffpanel/_issues.html" %}
+
+<h2 class="bc-section">Models</h2>
+<div class="row g-3 mb-4">
+  {% for c in cards %}
+  <div class="col-md-6 col-xl-4">
+    <div class="bc-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <strong>{{ c.short }} · {{ c.purpose }}</strong>
+      </div>
+      <div class="small text-muted mb-2">{{ c.algorithm }}</div>
+      <table class="table table-sm small mb-2">
+        {% for k, v in c.metrics.items %}<tr><td>{{ k }}</td><td class="text-end">{{ v }}</td></tr>{% endfor %}
+      </table>
+      <div class="small text-muted">Trained {{ c.trained_at|date:"j M Y, H:i" }} · {{ c.size_kb }} KB · {{ c.labels|length }} output{{ c.labels|length|pluralize }}</div>
+      <details class="small mt-1"><summary>Inputs ({{ c.features|length }})</summary><span class="font-monospace">{{ c.features|join:", " }}</span></details>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="bc-section">Coverage</h2>
+<p class="small text-muted">
+  <span class="badge text-bg-success-subtle text-success-emphasis border">live</span> recommended and on sale ·
+  <span class="badge text-bg-warning-subtle text-warning-emphasis border">not learned</span> on sale, but the recommender won't suggest it until retrained ·
+  <span class="badge text-bg-danger-subtle text-danger-emphasis border">switched off</span> the recommender may suggest it, but it's hidden, so plans go without it
+</p>
+<div class="row g-3">
+  {% for s in sections %}
+  <div class="col-lg-6">
+    <div class="bc-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <strong>{{ s.model }} · {{ s.title }}</strong>
+        <small class="text-muted">{{ s.counts.live }} live{% if s.counts.not_learned %} · {{ s.counts.not_learned }} not learned{% endif %}{% if s.counts.switched_off %} · {{ s.counts.switched_off }} switched off{% endif %}</small>
+      </div>
+      {% if not s.editable %}<div class="small text-muted mb-1">Fixed list in code (changing it needs code and retraining).</div>{% endif %}
+      <table class="table table-sm small mb-0">
+        {% for r in s.rows %}
+        <tr class="{% if r.state == 'inactive' %}text-muted{% endif %}">
+          <td>{% if r.obj and s.model == "M3" %}<a href="{% url 'staffpanel:addon_edit' r.obj.pk %}">{{ r.label }}</a>{% elif r.obj %}<a href="{% url 'staffpanel:skillpack_edit' r.obj.pk %}">{{ r.label }}</a>{% else %}{{ r.label }}{% endif %}
+            {% if r.note %}<div class="text-muted">{{ r.note }}</div>{% endif %}</td>
+          <td class="text-end">
+            {% if r.state == "live" %}<span class="badge text-bg-success-subtle text-success-emphasis border">live</span>
+            {% elif r.state == "not_learned" %}<span class="badge text-bg-warning-subtle text-warning-emphasis border">not learned</span>
+            {% elif r.state == "switched_off" %}<span class="badge text-bg-danger-subtle text-danger-emphasis border">switched off</span>
+            {% else %}<span class="badge text-bg-light border">inactive</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

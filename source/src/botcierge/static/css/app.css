@@ -121,3 +121,25 @@ a.bc-card:hover { border-color: var(--bc-ink); }
 .bc-zone { position: absolute; border: 2px solid #dc3545; background: rgba(220, 53, 69, .25); border-radius: 4px; }
 .bc-zone span { position: absolute; top: 2px; left: 4px; font-size: .7rem; font-weight: 700; color: #fff; text-shadow: 0 0 2px #000; }
 .bc-zone.bc-zone-drawing { border-style: dashed; }
+
+/* S13 review stars */
+.bc-stars { color: #e0a526; font-size: 1.15rem; letter-spacing: .1em; }
+
+/* Staff panel (A03-A05) */
+.bc-frame.bc-frame-xs {width: 44px; flex: 0 0 44px; border-radius: 8px}
+/* chip picker (static/js/chip_select.js): chosen items as removable chips plus a search box */
+.bc-chips { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; padding: .35rem .5rem;
+  border: var(--bs-border-width) solid var(--bs-border-color); border-radius: var(--bs-border-radius);
+  background: var(--bs-body-bg); position: relative; }
+.bc-chips:focus-within { border-color: #86b7fe; box-shadow: 0 0 0 .2rem rgba(13,110,253,.15); }
+.bc-chip { display: inline-flex; align-items: center; gap: .25rem; padding: .15rem .25rem .15rem .6rem;
+  border-radius: 999px; background: var(--bs-secondary-bg); font-size: .875rem; }
+.bc-chip button { border: 0; background: none; color: inherit; line-height: 1; padding: 0 .3rem; border-radius: 999px; }
+.bc-chip button:hover { background: var(--bs-tertiary-bg); }
+.bc-chips input { flex: 1 1 10rem; min-width: 8rem; border: 0; outline: 0; background: transparent; color: inherit; padding: .2rem; }
+.bc-chips-menu { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; margin-top: 2px; max-height: 15rem; overflow-y: auto;
+  background: var(--bs-body-bg); border: var(--bs-border-width) solid var(--bs-border-color); border-radius: var(--bs-border-radius);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.12); list-style: none; padding: .25rem 0; }
+.bc-chips-menu li { padding: .3rem .75rem; cursor: pointer; font-size: .9rem; }
+.bc-chips-menu li.active, .bc-chips-menu li:hover { background: var(--bs-secondary-bg); }
+.bc-chips-menu li.empty { cursor: default; color: var(--bs-secondary-color); }

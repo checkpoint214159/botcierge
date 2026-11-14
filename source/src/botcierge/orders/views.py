@@ -1,4 +1,4 @@
-"""Orders: booking page, cart, checkout, tracking and history (S08-S12).
+"""Orders: booking page, cart, checkout, tracking, history, cancel and reschedule (S08-S12, S18).
 
 Flow: plan (planner.result) -> booking page (S08 adjust setup + S09 dates, address, floor plan,
 availability) -> cart (all plans not yet paid for, ready ones first) -> checkout (S10) -> order (S11).
@@ -18,10 +18,11 @@ from planner.models import TaskRequest
 from planner.pricing import rec_quote_lines
 from planner.views import describe_tuning, total_label
 
-from .forms import BookingForm, CheckoutForm
+from .forms import BookingForm, CheckoutForm, RescheduleForm
 from .models import Order, PromoCode
-from .services import (FLOW, ONGOING, NoUnitFree, booking_problems, booking_window, check_promo, create_order,
-                       discount_for, order_summary, preview_booking, rebook, save_booking)
+from .services import (FLOW, ONGOING, REVIEWABLE, NoUnitFree, booking_problems, booking_window, can_change,
+                       cancel_order, check_promo, create_order, discount_for, last_change_day, order_summary,
+                       preview_booking, rebook, reschedule_order, save_booking)
 
 
 def _open_plan(request, pk):
@@ -204,6 +205,7 @@ def _with_progress(order):
     order.robot = item.robot_model if item else None
     order.step = FLOW.index(order.status) + 1 if order.status in FLOW else None
     order.steps_total = len(FLOW)
+    order.can_review = order.status in REVIEWABLE and not hasattr(order, "review")
     return order
 
 
@@ -211,7 +213,7 @@ def _with_progress(order):
 def order_list(request):
     """S12: ongoing orders first, finished ones below with a rebook button."""
     orders = [_with_progress(o) for o in Order.objects.filter(customer=request.user)
-              .prefetch_related("items__robot_model").order_by("start_date")]
+              .select_related("review").prefetch_related("items__robot_model").order_by("start_date")]
     ongoing = [o for o in orders if o.status in ONGOING]
     past = sorted((o for o in orders if o.status not in ONGOING), key=lambda o: o.start_date, reverse=True)
     return render(request, "orders/order_list.html", {"ongoing": ongoing, "past": past})
@@ -230,15 +232,61 @@ def order_rebook(request, pk):
     return redirect("orders:booking", pk=tr.pk)
 
 
-@login_required
-def order_detail(request, pk):
-    """S11: status timeline built from OrderStatusEvent."""
-    order = get_object_or_404(Order, pk=pk, customer=request.user)
+def _detail_context(order, reschedule_form=None):
     steps = [(st, st.label) for st in FLOW]
     reached = {e.status for e in order.events.all()}
-    return render(request, "orders/order_detail.html", {
+    changeable = can_change(order)
+    return {
         "order": order, "summary": order_summary(order), "events": order.events.all(),
         "steps": [(label, st in reached) for st, label in steps],
         "cancelled": order.status == Order.Status.CANCELLED,
         "ongoing": order.status in ONGOING,
-    })
+        # S18: change of plans, only before dispatch and up to the day before
+        "changeable": changeable, "last_change_day": last_change_day(order),
+        "reschedule_form": (reschedule_form or RescheduleForm(order=order)) if changeable else None,
+        "payment": getattr(order, "payment", None),
+        # S13: rate the job once it's done
+        "review": getattr(order, "review", None),
+        "can_review": order.status in REVIEWABLE and not hasattr(order, "review"),
+    }
+
+
+@login_required
+def order_detail(request, pk):
+    """S11: status timeline built from OrderStatusEvent, plus cancel/reschedule (S18) and review (S13)."""
+    order = get_object_or_404(Order, pk=pk, customer=request.user)
+    return render(request, "orders/order_detail.html", _detail_context(order))
+
+
+@login_required
+@require_POST
+def order_cancel(request, pk):
+    """S18: cancel before the start day for a full refund."""
+    order = get_object_or_404(Order, pk=pk, customer=request.user)
+    if not can_change(order):
+        messages.error(request, "This booking can no longer be cancelled online. Contact support instead.")
+        return redirect("orders:order_detail", pk=order.pk)
+    cancel_order(order, request.user)
+    messages.success(request, f"Order #{order.pk} is cancelled and S${order.total} will be refunded to your card.")
+    return redirect("orders:order_detail", pk=order.pk)
+
+
+@login_required
+@require_POST
+def order_reschedule(request, pk):
+    """S18: move the booking to a new start date (same length, same price)."""
+    order = get_object_or_404(Order, pk=pk, customer=request.user)
+    if not can_change(order):
+        messages.error(request, "This booking can no longer be moved online. Contact support instead.")
+        return redirect("orders:order_detail", pk=order.pk)
+    form = RescheduleForm(request.POST, order=order)
+    if form.is_valid():
+        try:
+            reschedule_order(order, request.user, form.cleaned_data["start_date"])
+        except NoUnitFree:
+            form.add_error("start_date", "No unit of this robot is free on those dates. Try another date.")
+        else:
+            messages.success(request, f"Moved. Your booking now runs {order.start_date:%d %b} to {order.end_date:%d %b}.")
+            return redirect("orders:order_detail", pk=order.pk)
+    # show the page again with the error next to the date field
+    return render(request, "orders/order_detail.html", _detail_context(order, reschedule_form=form))

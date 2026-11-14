@@ -25,12 +25,16 @@ def booking_window(rec) -> tuple[date, date]:
     return window_from(rec.task_request.start_date, rec.price_breakdown.get("rental_days", 1))
 
 
-def free_units(robot_model, start: date, end: date):
-    """Units of this robot model with no overlapping, non-cancelled booking."""
+def free_units(robot_model, start: date, end: date, ignore_order=None):
+    """Units of this robot model with no overlapping, non-cancelled booking.
+    ignore_order: leave this order's own booking out (used when it is being moved to new dates, S18)."""
     busy = OrderItem.objects.filter(
         kind=OrderItem.Kind.ROBOT, fleet_unit__isnull=False,
         order__start_date__lte=end, order__end_date__gte=start,
-    ).exclude(order__status__in=INACTIVE_ORDERS).values_list("fleet_unit_id", flat=True)
+    ).exclude(order__status__in=INACTIVE_ORDERS)
+    if ignore_order is not None:
+        busy = busy.exclude(order=ignore_order)
+    busy = busy.values_list("fleet_unit_id", flat=True)
     return (FleetUnit.objects.filter(robot_model=robot_model)
             .exclude(status__in=UNBOOKABLE).exclude(pk__in=busy))
 
@@ -213,6 +217,8 @@ FLOW = [Order.Status.CONFIRMED, Order.Status.DISPATCHED, Order.Status.ON_SITE,
         Order.Status.RUNNING, Order.Status.COMPLETED, Order.Status.COLLECTED]
 # Still in progress until the robot is collected (or the order is cancelled).
 ONGOING = [Order.Status.PENDING_PAYMENT, *FLOW[:-1]]
+# The job is done, so the customer can rate it (S13).
+REVIEWABLE = [Order.Status.COMPLETED, Order.Status.COLLECTED]
 
 
 def next_status(order):
@@ -266,3 +272,82 @@ def order_summary(order) -> dict:
         "discount": order.discount,
         "promo_code": order.promo_code.code if order.promo_code else "",
     }
+
+
+# ---------------------------------------------------------------- cancel and reschedule (S18)
+
+# Changes are allowed until the day before the start date, and only before the robot leaves the depot.
+CHANGEABLE = [Order.Status.PENDING_PAYMENT, Order.Status.CONFIRMED]
+
+
+def can_change(order) -> bool:
+    return order.status in CHANGEABLE and order.start_date > timezone.localdate()
+
+
+def last_change_day(order) -> date:
+    return order.start_date - timedelta(days=1)
+
+
+def _release_unit(unit_id, order):
+    """A reserved unit goes back to available, unless another live order still holds it."""
+    if unit_id is None:
+        return
+    still_held = (OrderItem.objects.filter(kind=OrderItem.Kind.ROBOT, fleet_unit_id=unit_id,
+                                           order__status__in=ONGOING).exclude(order=order).exists())
+    if not still_held:
+        FleetUnit.objects.filter(pk=unit_id, status=FleetUnit.Status.RESERVED).update(
+            status=FleetUnit.Status.AVAILABLE)
+
+
+@transaction.atomic
+def cancel_order(order, user):
+    """Cancel, refund in full (nothing has been delivered yet), free the unit and log it on the timeline."""
+    order.status = Order.Status.CANCELLED
+    order.save(update_fields=["status"])
+    refunded = Payment.objects.filter(order=order, status=Payment.Status.PAID).update(
+        status=Payment.Status.REFUNDED)
+    note = f"Cancelled by the customer. S${order.total} refunded to your card." if refunded         else "Cancelled by the customer."
+    OrderStatusEvent.objects.create(order=order, status=order.status, note=note, created_by=user)
+    item = order.items.filter(kind=OrderItem.Kind.ROBOT).first()
+    _release_unit(item.fleet_unit_id if item else None, order)
+    return order
+
+
+@transaction.atomic
+def reschedule_order(order, user, new_start: date):
+    """Move the booking to a new start date, keeping the same number of days and the same price.
+    Keeps the same unit if it is free on the new dates, otherwise swaps to another free one.
+    Raises NoUnitFree if none is."""
+    days = (order.end_date - order.start_date).days + 1
+    start, end = window_from(new_start, days)
+    item = order.items.get(kind=OrderItem.Kind.ROBOT)
+    units = free_units(item.robot_model, start, end, ignore_order=order)
+    unit = units.filter(pk=item.fleet_unit_id).first() or units.first()
+    if unit is None:
+        raise NoUnitFree()
+
+    old_start = order.start_date
+    order.start_date, order.end_date = start, end
+    order.save(update_fields=["start_date", "end_date"])
+    if unit.pk != item.fleet_unit_id:
+        old_unit = item.fleet_unit_id
+        item.fleet_unit = unit
+        item.save(update_fields=["fleet_unit"])
+        _release_unit(old_unit, order)
+        if unit.status == FleetUnit.Status.AVAILABLE:
+            unit.status = FleetUnit.Status.RESERVED
+            unit.save(update_fields=["status"])
+    OrderStatusEvent.objects.create(
+        order=order, status=order.status, created_by=user,
+        note=f"Moved from {old_start:%d %b} to {start:%d %b} - {end:%d %b}.")
+
+    # keep the plan's window (and the robot's config built from it) in step with the order
+    rec = order.recommendation
+    if rec is not None:
+        tr = rec.task_request
+        shift = start - tr.start_date
+        tr.start_date += shift
+        tr.deadline_date += shift
+        tr.save(update_fields=["start_date", "deadline_date"])
+        refresh_conditioning(rec)
+    return order

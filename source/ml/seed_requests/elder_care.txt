@@ -1,0 +1,149 @@
+# elder_care: hand-written customer requests (LLM-written, see generate_data.py).
+# Format: one seed request per line. A line starting with "~" is a paraphrase of the
+# seed above it (same group). Lines starting with "#" are comments.
+look after my grandma while im at work
+~ keep an eye on my ah ma during office hours
+~ my grandmother is alone in the day while i work, need someone to watch her
+remind my dad to take his medicine
+~ need reminders for my father's medication
+~ my dad always forgets his pills, remind him
+my mum lives alone and i worry she might fall
+~ elderly mother living alone, scared she will fall
+~ worried my mum falls at home and nobody knows
+keep my grandfather company, he gets lonely
+~ ah gong very lonely at home, need companion
+~ grandpa bored and lonely in the day
+alert me if my father falls
+~ need to be notified if my dad has a fall
+check on my elderly parents twice a day
+~ check on mum and dad morning and evening
+my grandma has dementia, need someone to watch her
+~ ah ma got dementia, cannot leave her alone
+~ grandmother with dementia, needs supervision
+helper is on home leave, need help with my bedridden mother
+~ maid going home 2 weeks, my mother is bedridden
+fetch water and snacks for my dad who uses a walker
+~ my father uses a walker, need someone to bring him things
+mum just had knee surgery, needs help moving around the house
+~ mother recovering from knee op, help her around
+grandpa wanders at night, need monitoring
+~ grandfather walks around at night, worried
+remind ah ma to drink water, she always forgets
+~ grandma forgets to drink water
+my dad had a stroke, needs someone to watch him in the day
+~ father post-stroke, need daytime supervision
+look after my parents while we go on holiday
+~ going overseas, need someone to check on my old parents
+elderly uncle living alone in a 2 room flat
+~ my uncle is old and stays alone in a 2-room hdb
+make sure grandma eats lunch
+~ check that my grandmother has her lunch
+need a video call robot so i can see my mum
+~ want to video call my mother through the robot
+my father is 85 and very frail
+~ dad is 85, very weak
+mum has parkinson's, need help bringing things to her
+call me if anything happens to my grandmother
+~ notify me if anything happens to ah ma
+companion for my granny
+~ granny companion
+remind dad about his doctor appointments
+~ dad keeps missing his polyclinic appointment
+my mother in law cannot see well, help her around the house
+~ mother-in-law has poor eyesight, needs help at home
+elderly care
+~ care for elderly
+grandpa needs someone to talk to and play music for him
+~ ah gong likes old songs, play music and chat with him
+watch over my dad at night, he sometimes falls going to the toilet
+~ dad falls when going to toilet at night, need someone watching
+need help with an old person at home
+my parents are old and stubborn, wont hire a helper
+~ parents refuse a maid but they really need help
+bring medicine and water to my mum at set times
+~ deliver pills and water to my mother on schedule
+my grandmother uses a wheelchair, help fetch things
+~ wheelchair-bound grandma needs things fetched
+keep an eye on dad after his hospital discharge
+~ father just discharged from hospital, need monitoring
+mum gets confused in the evenings
+assist my elderly father
+my grandma alone at home during CNY because we visit relatives
+monitor my parents health, my siblings all overseas
+~ siblings all abroad, need someone to monitor our parents
+check if my dad is ok every few hours
+~ check on dad every few hours
+give my grandma her eye drops on time
+~ remind grandma about eye drops
+old folks at home, need assistance
+my father keeps forgetting to turn off the stove
+~ dad leaves the stove on, worried about him
+help my grandmother walk to the toilet
+need someone to chat with my mum so she wont be depressed
+~ mum feeling depressed living alone, needs company
+elderly relative living alone, need daily check in
+~ daily check-in on my old aunt who lives alone
+help ah ma get things from the high shelf
+grandparents need help while i work night shift
+~ i work nights, my grandparents need someone around
+look after mum
+# borderline with home_patrol: the person is the focus, so elder_care
+watch the house and my grandma while im away
+help my dad who uses a walker
+~ my father has a walker, needs assistance
+remind my mum to exercise and do her stretches
+dad is diabetic, remind him to check blood sugar
+~ my diabetic father forgets to check his sugar
+elderly parent care for 1 week
+grandma afraid to be alone at night
+~ my grandmother scared when alone at night
+fetch the newspaper and tea for my grandfather every morning
+care for my aunt with alzheimers
+~ aunt has alzheimer's, needs care
+companion robot for my lonely dad
+mum cannot walk well after her fall last month
+my 90 year old grandma
+need help for my old parents
+monitor my mother while helper is off on sunday
+~ helper's off day sunday, someone to watch mum
+assist my elderly mum with daily things
+check on nai nai
+my ah ma stays alone in a 3 room flat in toa payoh, need someone to check on her
+~ grandma alone in toa payoh 3rm flat, check on her
+help my old father get water and the remote, he cant get up easily
+~ dad struggles to stand, bring him water and the tv remote
+remind my mum to take her blood pressure pills at 8am and 8pm
+~ mum needs bp medicine reminders morning and night
+my grandmother needs someone to keep her company in the afternoon
+~ afternoon company for grandma
+watch my dad for a few days, helper just left
+~ helper quit, need someone to watch dad for a few days
+my mother has early dementia, keep her safe while i work
+~ mum early dementia, need supervision during work
+my father needs help after his cataract surgery
+grandpa needs reminders to eat and rest
+~ remind grandpa to eat and take rest
+check on my grandma in the morning and alert me if she doesnt wake up
+my elderly parents need help reaching things and getting around
+~ old parents need help getting things around the house
+mum alone at home after dad passed away, worried about her
+~ dad passed, now mum alone, worried
+remind my grandfather to use his walking frame
+~ grandpa forgets to use his walking frame
+help for my aunt who is old and lives alone in yishun
+watch ah ma while we go for the wedding dinner
+~ need someone with grandma while we attend a wedding dinner
+my granddad keeps falling, need to be alerted
+~ grandfather falls often, alert me
+my father in law needs help after his hip operation
+elderly companion for the week
+grandma likes to chat in hokkien, can keep her company
+someone to make sure mum is ok while i travel
+~ travelling for work, make sure mum is ok
+# multi-request messages: labelled by the main job
+look after my grandma in the day, and maybe tidy her room a bit
+check on dad and remind him to eat, also sweep the floor if can
+keep my mum company and bring her drinks, she's 88
+need care for ah gong, he can't walk far
+grandma recovering from covid, needs someone to check on her
+my father cannot be alone, need someone during the day
