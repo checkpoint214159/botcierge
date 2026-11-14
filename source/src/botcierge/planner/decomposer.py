@@ -161,6 +161,23 @@ def build_conditioning(tr, category, skill_pack, addons, est_hours, subtasks) ->
     return base
 
 
+def build_quote(robot, addons, skill_pack, rental_days: int) -> tuple[Decimal, dict]:
+    """Shared by the ML recommendation (S07) and customer swaps (S08) so both price identically."""
+    breakdown = {"delivery_and_setup": float(DELIVERY_FEE)}
+    total = DELIVERY_FEE
+    if robot:
+        breakdown["robot"] = float(robot.daily_rate * rental_days)
+        total += robot.daily_rate * rental_days
+    for a in addons:
+        breakdown[f"addon:{a.code}"] = float(a.daily_rate * rental_days)
+        total += a.daily_rate * rental_days
+    if skill_pack:
+        breakdown["skill_pack"] = float(skill_pack.flat_fee)
+        total += skill_pack.flat_fee
+    breakdown["rental_days"] = rental_days
+    return total, breakdown
+
+
 @transaction.atomic
 def decompose(tr: TaskRequest) -> Recommendation:
     # 1. category
@@ -199,18 +216,7 @@ def decompose(tr: TaskRequest) -> Recommendation:
     skill_pack = SkillPack.objects.filter(code=pack_code, is_active=True).first()
 
     # 6. quote
-    breakdown = {"delivery_and_setup": float(DELIVERY_FEE)}
-    total = DELIVERY_FEE
-    if robot:
-        breakdown["robot"] = float(robot.daily_rate * rental_days)
-        total += robot.daily_rate * rental_days
-    for a in addons:
-        breakdown[f"addon:{a.code}"] = float(a.daily_rate * rental_days)
-        total += a.daily_rate * rental_days
-    if skill_pack:
-        breakdown["skill_pack"] = float(skill_pack.flat_fee)
-        total += skill_pack.flat_fee
-    breakdown["rental_days"] = rental_days
+    total, breakdown = build_quote(robot, addons, skill_pack, rental_days)
 
     subtasks = SUBTASK_TEMPLATES.get(category, [])
     edge_cases = find_edge_cases(tr, category, days_needed, total, robot)
@@ -240,4 +246,30 @@ def decompose(tr: TaskRequest) -> Recommendation:
     rec.addons.set(addons)
     tr.status = TaskRequest.Status.PLANNED
     tr.save(update_fields=["status"])
+    return rec
+
+
+@transaction.atomic
+def save_customer_edit(base: Recommendation, robot, addons) -> Recommendation:
+    """S08: the customer swapped the robot and/or add-ons. Re-quote and save a new
+    Recommendation(source=CUSTOMER); the ML row is kept so acceptance can be measured."""
+    tr = base.task_request
+    spec = tr.spec
+    total, breakdown = build_quote(robot, addons, base.skill_pack, spec.est_days_needed)
+    rec = Recommendation.objects.create(
+        task_request=tr,
+        source=Recommendation.Source.CUSTOMER,
+        robot_model=robot,
+        predicted_platform=base.predicted_platform,
+        platform_confidence=base.platform_confidence,
+        skill_pack=base.skill_pack,
+        policy_conditioning=build_conditioning(
+            tr, spec.task_category, base.skill_pack, addons, spec.est_robot_hours, spec.subtasks),
+        quoted_price=total,
+        price_breakdown=breakdown,
+    )
+    rec.addons.set(addons)
+    spec.within_budget = total <= tr.budget_sgd
+    spec.edge_cases = find_edge_cases(tr, spec.task_category, spec.est_days_needed, total, robot)
+    spec.save(update_fields=["within_budget", "edge_cases"])
     return rec

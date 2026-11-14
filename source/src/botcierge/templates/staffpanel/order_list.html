@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <h1 class="h3 mb-0">Orders</h1>
+  <form method="get" class="d-flex gap-2">
+    <select name="status" class="form-select">
+      <option value="">All statuses</option>
+      {% for code, label in statuses %}<option value="{{ code }}" {% if code == selected %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-outline-dark">Filter</button>
+  </form>
+</div>
+<div class="bc-card p-3">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>#</th><th>Customer</th><th>Dates</th><th>Status</th><th class="text-end">Total</th><th></th></tr></thead>
+    {% for o in orders %}
+    <tr><td>{{ o.pk }}</td><td>{{ o.customer.get_full_name|default:o.customer.username }}</td>
+      <td>{{ o.start_date|date:"j M" }} to {{ o.end_date|date:"j M" }}</td>
+      <td><span class="badge bc-badge">{{ o.get_status_display }}</span></td>
+      <td class="text-end">S${{ o.total }}</td>
+      <td class="text-end"><a href="{% url 'staffpanel:order_detail' o.pk %}">Manage</a></td></tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No orders.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -9,6 +9,12 @@
       <option value="">All platforms</option>
       {% for code, label in platforms %}<option value="{{ code }}" {% if code == selected_platform %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
+    <select class="form-select" name="sort">
+      <option value="">Sort: default</option>
+      <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Price: low to high</option>
+      <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Price: high to low</option>
+      <option value="rating" {% if sort == "rating" %}selected{% endif %}>Top rated</option>
+    </select>
     <div class="form-check align-self-center"><input class="form-check-input" type="checkbox" name="outdoor" value="1" id="o" {% if outdoor %}checked{% endif %}><label class="form-check-label" for="o">Outdoor</label></div>
     <button class="btn btn-outline-dark">Filter</button>
   </form>

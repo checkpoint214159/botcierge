@@ -2,8 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .decomposer import CATEGORY_CONFIDENCE_FLOOR, decompose
-from .forms import TaskRequestForm
+from .decomposer import CATEGORY_CONFIDENCE_FLOOR, decompose, save_customer_edit
+from .forms import SwapForm, TaskRequestForm
 from .models import TaskRequest
 
 
@@ -54,7 +54,54 @@ def result(request, pk):
         "rec": rec,
         "lines": lines,
         "low_confidence": spec.category_confidence < CATEGORY_CONFIDENCE_FLOOR,
+        "reasons": explain(task_request, spec, rec),
     })
+
+
+def explain(tr, spec, rec):
+    """S17: plain-language reasons for the recommendation. Deliberately excludes the
+    staff-only policy_conditioning JSON."""
+    reasons = []
+    if rec.source == rec.Source.CUSTOMER:
+        reasons.append("You changed the robot or attachments, so this setup is your own choice.")
+    if rec.robot_model:
+        reasons.append(
+            f"{rec.robot_model.name} is the lowest-priced {rec.robot_model.get_platform_display().lower()} "
+            f"robot that can carry {tr.payload_kg} kg"
+            f"{' and handle stairs' if tr.has_stairs else ''}{' and work outdoors' if tr.is_outdoor else ''}."
+            if rec.source == rec.Source.ML else
+            f"{rec.robot_model.name} meets your payload{', stairs' if tr.has_stairs else ''}"
+            f"{' and outdoor' if tr.is_outdoor else ''} needs.")
+    if rec.source == rec.Source.ML and rec.predicted_platform:
+        reasons.append(
+            f"Our model matched your task to a {rec.predicted_platform.replace('_', ' ')} platform "
+            f"({round(rec.platform_confidence * 100)}% match).")
+    for a in rec.addons.all():
+        reasons.append(f"{a.name} was added because it suits {spec.get_task_category_display().lower()} jobs.")
+    if rec.skill_pack:
+        reasons.append(f"The {rec.skill_pack.name} skill pack is tuned for {spec.get_task_category_display().lower()}.")
+    reasons.append(
+        f"We estimate {spec.est_robot_hours:.1f} robot hours, so we quoted {spec.est_days_needed} day(s).")
+    return reasons
+
+
+@login_required
+def swap(request, pk):
+    """S08: swap the robot or add-ons; the quote is recomputed and saved as source=CUSTOMER."""
+    task_request = get_object_or_404(TaskRequest, pk=pk, customer=request.user)
+    rec = task_request.recommendations.first()
+    if rec is None or not hasattr(task_request, "spec"):
+        return redirect("planner:start")
+    if request.method == "POST":
+        form = SwapForm(request.POST, task_request=task_request)
+        if form.is_valid():
+            save_customer_edit(rec, form.cleaned_data["robot"], list(form.cleaned_data["addons"]))
+            messages.success(request, "Your changes are saved and the quote is updated.")
+            return redirect("planner:result", pk=task_request.pk)
+    else:
+        form = SwapForm(task_request=task_request,
+                        initial={"robot": rec.robot_model, "addons": rec.addons.all()})
+    return render(request, "planner/swap.html", {"tr": task_request, "rec": rec, "form": form})
 
 
 @login_required

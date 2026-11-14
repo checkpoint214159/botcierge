@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.pk }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">Order #{{ order.pk }}</h1>
+<p class="text-muted">{{ order.start_date|date:"j M Y" }} to {{ order.end_date|date:"j M Y" }} · {{ order.delivery_address }}</p>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Tracking</h2>
+      {% if cancelled %}<div class="alert alert-secondary small">This booking was cancelled.</div>{% endif %}
+      <ol class="list-unstyled mb-3">
+        {% for label, done in steps %}
+        <li class="mb-1 {% if done %}fw-semibold{% else %}text-muted{% endif %}">{% if done %}&#10003;{% else %}&#9675;{% endif %} {{ label }}</li>
+        {% endfor %}
+      </ol>
+      <h3 class="h6">Updates</h3>
+      <ul class="small mb-0">
+        {% for e in events %}<li>{{ e.created_at|date:"j M, H:i" }} · <strong>{{ e.get_status_display }}</strong>{% if e.note %} · {{ e.note }}{% endif %}</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+  <div class="col-lg-5">
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Summary</h2>
+      <table class="table table-sm small mb-0">
+        {% for i in items %}<tr><td>{{ i.description }}{% if i.kind == "robot" or i.kind == "addon" %} × {{ i.quantity }}{% endif %}</td><td class="text-end">S${{ i.line_total }}</td></tr>{% endfor %}
+        {% if order.discount %}<tr><td>Promo</td><td class="text-end">-S${{ order.discount }}</td></tr>{% endif %}
+        <tr class="fw-bold"><td>Paid</td><td class="text-end">S${{ order.total }}</td></tr>
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

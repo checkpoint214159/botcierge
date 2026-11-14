@@ -1,8 +1,15 @@
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, F, Q
 from django.shortcuts import get_object_or_404, render
 
 from .models import RobotModel, SkillPack
 from .taxonomy import PLATFORM_CHOICES
+
+
+SORTS = {
+    "price_asc": ("daily_rate",),
+    "price_desc": ("-daily_rate",),
+    "rating": (F("avg_rating").desc(nulls_last=True), "daily_rate"),
+}
 
 
 def home(request):
@@ -24,9 +31,12 @@ def robot_list(request):
         robots = robots.filter(outdoor=True)
     if q:
         robots = robots.filter(Q(name__icontains=q) | Q(tagline__icontains=q) | Q(description__icontains=q))
+    sort = request.GET.get("sort", "")
+    if sort in SORTS:
+        robots = robots.order_by(*SORTS[sort])
     return render(request, "catalog/robot_list.html", {
         "robots": robots, "platforms": PLATFORM_CHOICES,
-        "selected_platform": platform, "outdoor": outdoor, "q": q,
+        "selected_platform": platform, "outdoor": outdoor, "q": q, "sort": sort,
     })
 
 

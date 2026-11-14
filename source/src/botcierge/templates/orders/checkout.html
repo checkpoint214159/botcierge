@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Checkout</h1>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="bc-card p-4">
+      <form method="post">{% csrf_token %}
+        {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+        <button class="btn bc-btn w-100">Pay S${{ total }}</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="bc-card p-4">
+      <h2 class="bc-section">Order summary</h2>
+      <table class="table table-sm small mb-0">
+        <tr><td>Subtotal</td><td class="text-end">S${{ subtotal }}</td></tr>
+        {% if discount %}<tr><td>Promo discount</td><td class="text-end">-S${{ discount }}</td></tr>{% endif %}
+        <tr class="fw-bold"><td>Total</td><td class="text-end">S${{ total }}</td></tr>
+      </table>
+      <p class="small text-muted mt-2 mb-0">Promo codes are applied when you pay.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
