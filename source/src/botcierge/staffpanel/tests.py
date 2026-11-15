@@ -25,7 +25,8 @@ class StaffFixture(TestCase):
 
 class AccessTests(StaffFixture):
     PAGES = ["robot_list", "robot_new", "fleet_list", "fleet_new", "addon_list", "addon_new",
-             "skillpack_list", "skillpack_new", "ml_models", "dashboard", "ticket_list", "review_list"]
+             "skillpack_list", "skillpack_new", "ml_models", "dashboard", "ticket_list", "review_list",
+             "promo_list", "promo_new", "customer_list", "customer_reviews", "ml_overrides_csv"]
 
     def test_staff_can_open_every_catalogue_page(self):
         for name in self.PAGES:
@@ -397,3 +398,124 @@ class DashboardTests(StaffFixture):
         resp = self.client.get(reverse("staffpanel:dashboard"))
         self.assertContains(resp, "Revenue by task type")
         self.assertContains(resp, "Answer next")
+
+
+class BookedFixture(StaffFixture):
+    """Helper to book an order for the demo customer through the real code path."""
+
+    def book(self, offset=3, budget=500, description="mop and vacuum my flat", **kw):
+        user = User.objects.get(username="demo")
+        start = date.today() + timedelta(days=offset)
+        tr = TaskRequest.objects.create(
+            customer=user, description=description, area_m2=90, num_rooms=4, floor_type="tile",
+            budget_sgd=budget, start_date=start, deadline_date=start + timedelta(days=1), hours_per_day=4,
+            address=Address.objects.get(customer=user), **kw)
+        return create_order(user, decompose(tr), "1 Test Rd", None)
+
+
+class MonitoringTests(BookedFixture):
+    """A13 acceptance rate and A12 export of human changes."""
+
+    def test_staff_override_lowers_acceptance_and_is_exported(self):
+        from planner.decomposer import eligible_robots
+        from planner.monitoring import acceptance
+        kept, changed = self.book(), self.book(offset=4)
+        tr = changed.recommendation.task_request
+        other = eligible_robots(tr).exclude(pk=changed.recommendation.robot_model_id).first()
+        self.client.post(reverse("staffpanel:review_detail", args=[changed.pk]),
+                         {"action": "override", "robot": other.pk, "addons": [], "skill_pack": ""})
+        a = acceptance()
+        self.assertEqual((a["orders"], a["accepted"], a["accepted_pct"], a["staff_changed"], a["customer_changed"]),
+                         (2, 1, 50, 1, 0))
+        self.assertContains(self.client.get(reverse("staffpanel:ml_models")), "Shipped as suggested")
+        resp = self.client.get(reverse("staffpanel:ml_overrides_csv"))
+        self.assertEqual(resp["Content-Type"], "text/csv")
+        rows = resp.content.decode().strip().splitlines()
+        self.assertEqual(len(rows), 2)  # header + the one staff change
+        self.assertIn("staff", rows[1])
+        self.assertIn(other.name, rows[1])
+
+
+class RiskSortTests(BookedFixture):
+    """A14: riskiest first, and the arrows follow the same order."""
+
+    def test_flagged_orders_come_first_and_arrows_keep_the_sort(self):
+        from orders.review import review_queue
+        calm = self.book(offset=2)
+        shaky = self.book(offset=6, budget=50)  # far too small a budget: flagged
+        self.assertTrue(review_queue()[0].pk == calm.pk)
+        risky = review_queue(sort="risk")
+        self.assertEqual(risky[0].pk, shaky.pk)
+        resp = self.client.get(reverse("staffpanel:review_list"), {"sort": "risk"})
+        self.assertContains(resp, "to check")
+        detail = reverse("staffpanel:review_detail", args=[shaky.pk]) + "?sort=risk"
+        resp = self.client.get(detail)
+        self.assertContains(resp, reverse("staffpanel:review_detail", args=[calm.pk]) + "?sort=risk")
+        resp = self.client.post(detail, {"action": "approve"})
+        self.assertRedirects(resp, reverse("staffpanel:review_detail", args=[calm.pk]) + "?sort=risk")
+
+
+class PromoTests(StaffFixture):
+    """A11: staff add and switch off promo codes; checkout respects it."""
+
+    def test_add_code_in_capitals_and_reject_duplicates(self):
+        from orders.models import PromoCode
+        url = reverse("staffpanel:promo_new")
+        self.client.post(url, {"code": "cny15", "percent_off": 15, "is_active": "on"})
+        self.assertTrue(PromoCode.objects.filter(code="CNY15", percent_off=15).exists())
+        resp = self.client.post(url, {"code": "Cny15", "percent_off": 5, "is_active": "on"})
+        self.assertContains(resp, "already exists")
+        resp = self.client.post(url, {"code": "BIG", "percent_off": 95, "is_active": "on"})
+        self.assertContains(resp, "Between 1% and 90%")
+
+    def test_switched_off_code_stops_working_and_code_is_locked(self):
+        from orders.models import PromoCode
+        from orders.services import check_promo
+        promo = PromoCode.objects.get(code="WELCOME10")
+        self.client.post(reverse("staffpanel:promo_toggle", args=[promo.pk]))
+        self.assertIsNone(check_promo("WELCOME10")[0])
+        self.client.post(reverse("staffpanel:promo_edit", args=[promo.pk]),
+                         {"code": "RENAMED", "percent_off": 20, "is_active": "on"})
+        promo.refresh_from_db()
+        self.assertEqual((promo.code, promo.percent_off, promo.is_active), ("WELCOME10", 20, True))
+        self.assertContains(self.client.get(reverse("staffpanel:promo_list")), "WELCOME10")
+
+
+class CustomerAccountTests(BookedFixture):
+    """A06: staff see a customer's history and can deactivate them (never a staff account)."""
+
+    def test_history_and_deactivate(self):
+        order = self.book()
+        demo = User.objects.get(username="demo")
+        resp = self.client.get(reverse("staffpanel:customer_detail", args=[demo.pk]))
+        self.assertContains(resp, f"#{order.pk}")
+        self.assertContains(resp, "1 live order")
+        self.client.post(reverse("staffpanel:customer_toggle", args=[demo.pk]))
+        demo.refresh_from_db()
+        self.assertFalse(demo.is_active)
+        self.assertFalse(self.client.login(username="demo", password="demopass123"))
+        self.client.login(username="staff", password="staffpass123")
+        self.assertContains(self.client.get(reverse("staffpanel:customer_list"), {"show": "deactivated"}), "demo")
+
+    def test_staff_accounts_are_not_listed_or_toggled(self):
+        staff = User.objects.get(username="staff")
+        self.assertNotContains(self.client.get(reverse("staffpanel:customer_list")), ">staff<")
+        self.assertEqual(self.client.post(reverse("staffpanel:customer_toggle", args=[staff.pk])).status_code, 404)
+
+
+class ReviewModerationTests(BookedFixture):
+    """A10: a hidden review leaves the robot's page and its rating."""
+
+    def test_hide_review(self):
+        from support.models import Review
+        order = self.book()
+        robot = order.recommendation.robot_model
+        rv = Review.objects.create(order=order, customer=order.customer, robot_model=robot, rating=1,
+                                   comment="Rude words here")
+        page = reverse("catalog:robot_detail", args=[robot.slug])
+        self.assertContains(self.client.get(page), "Rude words here")
+        self.client.post(reverse("staffpanel:customer_review_toggle", args=[rv.pk]))
+        rv.refresh_from_db()
+        self.assertFalse(rv.is_visible)
+        self.assertNotContains(self.client.get(page), "Rude words here")
+        self.assertContains(self.client.get(reverse("staffpanel:customer_reviews"), {"show": "hidden"}), "Rude words here")

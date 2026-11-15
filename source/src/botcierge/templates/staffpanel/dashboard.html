@@ -95,6 +95,14 @@
       </div>
       {% empty %}<p class="small text-muted">No paid bookings yet.</p>{% endfor %}
 
+      {% if business.accept.orders %}
+      <a class="bc-tile mt-3" href="{% url 'staffpanel:ml_models' %}">
+        <div class="d-flex justify-content-between align-items-baseline">
+          <span class="bc-k">Recommendations shipped as suggested</span><span class="bc-v">{{ business.accept.accepted_pct }}%</span>
+        </div>
+        <div class="small text-muted">of {{ business.accept.orders }} booked orders · {{ business.accept.customer_changed }} changed by customers, {{ business.accept.staff_changed }} by us in review</div>
+      </a>
+      {% endif %}
       <p class="small text-muted mt-3 mb-0">
         {{ business.refunds }} refund{{ business.refunds|pluralize }} (S${{ business.refunded|floatformat:2 }}) ·
         {% if business.rating %}average rating {{ business.rating|floatformat:1 }}&#9733; from {{ business.rating_count }} review{{ business.rating_count|pluralize }}{% else %}no reviews yet{% endif %}

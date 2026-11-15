@@ -25,20 +25,21 @@ def group_by(items, key, label):
     return [(label(k), group) for k, group in groups]
 
 
-def queue_nav(queue, item, url_name):
-    """Arrows for the one-at-a-time page: where this item sits in its queue and its neighbours."""
+def queue_nav(queue, item, url_name, query=""):
+    """Arrows for the one-at-a-time page: where this item sits in its queue and its neighbours.
+    query (e.g. "?sort=risk") is kept on the links so the arrows follow the order the list showed."""
     ids = [i.pk for i in queue]
     if item.pk not in ids:  # e.g. an order that has since been dispatched
         return {"position": None, "size": len(ids), "prev_url": None, "next_url": None}
     i = ids.index(item.pk)
     return {
         "position": i + 1, "size": len(ids),
-        "prev_url": reverse(url_name, args=[ids[i - 1]]) if i > 0 else None,
-        "next_url": reverse(url_name, args=[ids[i + 1]]) if i + 1 < len(ids) else None,
+        "prev_url": reverse(url_name, args=[ids[i - 1]]) + query if i > 0 else None,
+        "next_url": reverse(url_name, args=[ids[i + 1]]) + query if i + 1 < len(ids) else None,
     }
 
 
-def go_to_next(request, done_pk, waiting_ids, detail_url, list_url, empty_message):
+def go_to_next(request, done_pk, waiting_ids, detail_url, list_url, empty_message, query=""):
     """After a decision on done_pk, open the next item still waiting, in queue order after it
     (wrapping round to the start). waiting_ids is the queue as it was before the decision."""
     left = [pk for pk in waiting_ids if pk != done_pk]
@@ -46,5 +47,5 @@ def go_to_next(request, done_pk, waiting_ids, detail_url, list_url, empty_messag
     nxt = next((pk for pk in later if pk in left), left[0] if left else None)
     if nxt is None:
         messages.success(request, empty_message)
-        return redirect(list_url)
-    return redirect(detail_url, pk=nxt)
+        return redirect(reverse(list_url) + query)
+    return redirect(reverse(detail_url, args=[nxt]) + query)

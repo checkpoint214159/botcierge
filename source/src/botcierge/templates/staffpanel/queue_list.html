@@ -8,6 +8,7 @@ The view passes:
   start_url          first item's one-at-a-time page (or None), with start_label for the button
   row_template       the card for one item; it gets `item` and `top` (true for the very first one)
   highlight_state    the tab where the first item is outlined as "next up"
+  sorts, sort        optional [(code, label)] for a sort switch, and the selected code (A14)
 {% endcomment %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
@@ -15,11 +16,18 @@ The view passes:
   <h1 class="h4 mb-0">{{ title }}</h1>
   {% if start_url %}<a href="{{ start_url }}" class="btn bc-btn">{{ start_label }} &rarr;</a>{% endif %}
 </div>
-<p class="text-muted small">{{ intro }}</p>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <p class="text-muted small mb-2">{{ intro }}</p>
+  {% if sorts %}
+  <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Sort">
+    {% for code, label in sorts %}<a href="?show={{ state }}&sort={{ code }}" class="btn {% if code == sort %}bc-btn{% else %}bc-btn-outline{% endif %}">{{ label }}</a>{% endfor %}
+  </div>
+  {% endif %}
+</div>
 
 <ul class="nav nav-tabs mb-3">
   {% for code, label, n in tabs %}
-  <li class="nav-item"><a class="nav-link {% if code == state %}active{% endif %}" href="?show={{ code }}">{{ label }} <span class="badge text-bg-light border">{{ n }}</span></a></li>
+  <li class="nav-item"><a class="nav-link {% if code == state %}active{% endif %}" href="?show={{ code }}{% if sort %}&sort={{ sort }}{% endif %}">{{ label }} <span class="badge text-bg-light border">{{ n }}</span></a></li>
   {% endfor %}
 </ul>
 

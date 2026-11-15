@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Customer reviews{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">Customer reviews</h1>
+<p class="text-muted small mb-3">What customers wrote after their jobs, newest first. Hide anything abusive or off-topic: a hidden review drops off the robot's page and out of its star rating. Nothing is deleted, so you can show it again.</p>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item"><a class="nav-link {% if not show %}active{% endif %}" href="?">All</a></li>
+  <li class="nav-item"><a class="nav-link {% if show == 'low' %}active{% endif %}" href="?show=low">2 stars or fewer</a></li>
+  <li class="nav-item"><a class="nav-link {% if show == 'hidden' %}active{% endif %}" href="?show=hidden">Hidden <span class="badge text-bg-light border">{{ hidden }}</span></a></li>
+</ul>
+{% for rv in reviews %}
+<div class="bc-card p-3 mb-2 {% if not rv.is_visible %}opacity-75{% endif %}">
+  <div class="d-flex justify-content-between gap-3 flex-wrap">
+    <div class="flex-grow-1">
+      <div><strong>{{ rv.rating }}&#9733;</strong> · {{ rv.robot_model.name }}
+        {% if not rv.is_visible %}<span class="badge text-bg-secondary">Hidden</span>{% endif %}</div>
+      <div class="small text-muted"><a href="{% url 'staffpanel:customer_detail' rv.customer_id %}">{{ rv.customer.get_full_name|default:rv.customer.username }}</a> · <a href="{% url 'staffpanel:order_detail' rv.order_id %}">order #{{ rv.order_id }}</a> · {{ rv.created_at|date:"j M Y" }}</div>
+      <p class="small mb-0 mt-1">{{ rv.comment|default:"(no comment)" }}</p>
+    </div>
+    <form method="post" action="{% url 'staffpanel:customer_review_toggle' rv.pk %}">{% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="btn btn-sm {% if rv.is_visible %}btn-outline-danger{% else %}bc-btn-outline{% endif %}">{% if rv.is_visible %}Hide{% else %}Show again{% endif %}</button>
+    </form>
+  </div>
+</div>
+{% empty %}
+<div class="bc-card p-4 text-center text-muted">No reviews here.</div>
+{% endfor %}
+{% endblock %}

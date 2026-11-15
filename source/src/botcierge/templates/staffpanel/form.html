@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 {% comment %}
-Shared add/edit page for the catalogue (A03-A05). The view passes:
-  form, title, back (list URL), intro (one line of rules), aside [(label, value)], issues (sync checks)
+Shared add/edit page for the catalogue (A03-A05) and promo codes (A11). The view passes:
+  form, title, back (list URL), intro (one line of rules), aside [(label, value)], issues (sync checks),
+  no_tabs (hide the catalogue tabs on non-catalogue pages)
 {% endcomment %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-{% include "staffpanel/_catalogue_tabs.html" %}
+{% if not no_tabs %}{% include "staffpanel/_catalogue_tabs.html" %}{% endif %}
 <div class="d-flex justify-content-between align-items-baseline mb-2">
   <h1 class="h4 mb-0">{{ title }}</h1>
   <a href="{{ back }}" class="small">Back to list</a>

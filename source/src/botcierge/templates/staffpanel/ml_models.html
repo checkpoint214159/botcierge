@@ -10,6 +10,25 @@
 
 {% include "staffpanel/_issues.html" %}
 
+<h2 class="bc-section">Are customers keeping what the models suggest?</h2>
+<div class="bc-card p-3 mb-4">
+  {% if accept.orders %}
+  <div class="row g-3 mb-2">
+    <div class="col-6 col-md-3"><div class="bc-tile"><div class="bc-v">{{ accept.accepted_pct }}%</div><div class="bc-k">Shipped as suggested</div></div></div>
+    <div class="col-6 col-md-3"><div class="bc-tile"><div class="bc-v">{{ accept.customer_kept_pct }}%</div><div class="bc-k">Kept by the customer</div></div></div>
+    <div class="col-6 col-md-3"><div class="bc-tile"><div class="bc-v">{{ accept.staff_kept_pct }}%</div><div class="bc-k">Kept in our review</div></div></div>
+    <div class="col-6 col-md-3"><div class="bc-tile"><div class="bc-v">{{ accept.orders }}</div><div class="bc-k">Booked orders</div></div></div>
+  </div>
+  <p class="small text-muted">"Kept" means the robot, attachments and skill pack weren't changed: by the customer on the booking page, or by us in review before dispatch. The task types with the lowest rate come first: those are where the models need better training data.</p>
+  <table class="table table-sm small mb-2">
+    <thead><tr><th>Task type</th><th class="text-end">Orders</th><th class="text-end">Shipped as suggested</th><th class="text-end">Customer changed</th><th class="text-end">We changed</th></tr></thead>
+    {% for t in accept.per_type %}<tr><td>{{ t.label }}</td><td class="text-end">{{ t.orders }}</td><td class="text-end">{{ t.accepted_pct }}%</td><td class="text-end">{{ t.customer_changed }}</td><td class="text-end">{{ t.staff_changed }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="small text-muted">No booked orders yet.</p>{% endif %}
+  <a href="{% url 'staffpanel:ml_overrides_csv' %}" class="btn btn-sm bc-btn-outline">Download changes as training data (CSV)</a>
+  <span class="small text-muted ms-2">Each change next to what the models first suggested, ready to add to the training set.</span>
+</div>
+
 <h2 class="bc-section">Models</h2>
 <div class="row g-3 mb-4">
   {% for c in cards %}

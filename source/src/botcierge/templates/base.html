@@ -28,7 +28,7 @@
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
         {% if user.is_staff %}
-        {# Staff only see the staff panel, grouped like the dashboard: catalogue, bookings, support. #}
+        {# Staff only see the staff panel, grouped like the dashboard: catalogue, bookings, customers (support, accounts, reviews). #}
         <li class="nav-item"><a class="nav-link" href="{% url 'staffpanel:dashboard' %}">Dashboard</a></li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Catalogue</a>
@@ -47,9 +47,17 @@
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="{% url 'staffpanel:order_list' %}">Orders</a></li>
             <li><a class="dropdown-item" href="{% url 'staffpanel:review_list' %}">Review before dispatch</a></li>
+            <li><a class="dropdown-item" href="{% url 'staffpanel:promo_list' %}">Promo codes</a></li>
           </ul>
         </li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'staffpanel:ticket_list' %}">Support</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Customers</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'staffpanel:ticket_list' %}">Support tickets</a></li>
+            <li><a class="dropdown-item" href="{% url 'staffpanel:customer_list' %}">Accounts</a></li>
+            <li><a class="dropdown-item" href="{% url 'staffpanel:customer_reviews' %}">Reviews</a></li>
+          </ul>
+        </li>
         {% else %}
         {# Customer menus, grouped by app: robots = catalog, plans = planner, orders = orders + support. #}
         <li class="nav-item dropdown">

@@ -18,6 +18,7 @@ from catalog.checks import catalogue_issues
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from catalog.taxonomy import TASK_CATEGORY_CHOICES
 from orders.models import Order, Payment
+from planner.monitoring import acceptance
 from support import queue as tickets
 from support.models import Review, SupportTicket
 
@@ -95,6 +96,7 @@ def business_panel():
         "refunds": refunded.count(), "refunded": refunded.aggregate(s=Sum("amount"))["s"] or Decimal("0"),
         "daily": daily, "chart_days": CHART_DAYS, "types": types,
         "rating": reviews.aggregate(a=Avg("rating"))["a"], "rating_count": reviews.count(),
+        "accept": acceptance(),  # A13, all time
     }
 
 

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">Customers</h1>
+<p class="text-muted small mb-3">Customer accounts, newest first. Open one to see their orders, tickets and reviews, or to deactivate it.</p>
+<form method="get" class="d-flex gap-2 flex-wrap mb-3">
+  <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" style="max-width: 18rem" placeholder="Name, username or email">
+  <select name="show" class="form-select form-select-sm" style="max-width: 12rem">
+    <option value="">All accounts</option>
+    <option value="deactivated" {% if show == "deactivated" %}selected{% endif %}>Deactivated only</option>
+  </select>
+  <button class="btn btn-sm bc-btn-outline">Search</button>
+  {% if q or show %}<a href="{% url 'staffpanel:customer_list' %}" class="btn btn-sm btn-link">Clear</a>{% endif %}
+</form>
+<div class="bc-card p-3 table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Customer</th><th>Email</th><th>Joined</th><th class="text-end">Bookings</th><th class="text-end">Spent</th><th>Status</th></tr></thead>
+    {% for c in customers %}
+    <tr class="{% if not c.is_active %}text-muted{% endif %}">
+      <td><a href="{% url 'staffpanel:customer_detail' c.pk %}" class="fw-semibold">{{ c.get_full_name|default:c.username }}</a><div class="small text-muted">{{ c.username }}</div></td>
+      <td class="small">{{ c.email|default:"-" }}</td>
+      <td class="small">{{ c.date_joined|date:"j M Y" }}</td>
+      <td class="text-end">{{ c.n_orders }}</td>
+      <td class="text-end">S${{ c.spent|default:0|floatformat:2 }}</td>
+      <td>{% if c.is_active %}<span class="badge bc-badge">Active</span>{% else %}<span class="badge text-bg-secondary">Deactivated</span>{% endif %}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="text-muted">No customers match.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -27,7 +27,7 @@ python manage.py migrate                # new migrations fill in robot/skill pac
 python manage.py seed_demo              # catalogue, fleet, demo/staff users (re-run is safe)
 python manage.py seed_review_orders     # 12 test orders for the A08 review queue
 python manage.py seed_support_tickets   # 7 test tickets on those orders for the A09 queue (one is a hidden customer draft)
-python manage.py test                   # expect 95 tests OK
+python manage.py test                   # expect 102 tests OK
 ```
 
 - **Fresh database:** delete `db.sqlite3` first if you want exactly the demo state. It's gitignored, so nobody else's data comes with the pull.
@@ -43,6 +43,8 @@ python manage.py test                   # expect 95 tests OK
   - Support queue: `/staff/tickets/`, logic in `support/queue.py`. Staff reply drafts live on `SupportTicket.reply_draft` (never shown to the customer).
   - Dashboard: `/staff/`, one function per panel in `staffpanel/dashboard.py`.
   - Both staff queues share `staffpanel/queue.py` and the `queue_list.html` / `_queue_nav.html` templates.
+  - ML monitoring (A13 acceptance rate, A12 CSV of human changes): `planner/monitoring.py`, shown on `/staff/recommendation-models/`.
+  - Promo codes `/staff/promos/`, customer accounts `/staff/customers/`, review hiding `/staff/customer-reviews/`.
   - Story status is in `docs/user_stories.md`.
 
 ## Commands

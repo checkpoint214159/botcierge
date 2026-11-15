@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Promo codes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-1">
+  <h1 class="h4 mb-0">Promo codes</h1>
+  <a href="{% url 'staffpanel:promo_new' %}" class="btn bc-btn btn-sm">New promo code</a>
+</div>
+<p class="text-muted small mb-3">Customers enter these at checkout. Codes are never deleted, because past orders point at them; turn one off instead.</p>
+<div class="bc-card p-3 table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Code</th><th class="text-end">Off</th><th>Works until</th><th class="text-end">Used</th><th class="text-end">Given away</th><th>Status</th><th></th></tr></thead>
+    {% for p in promos %}
+    <tr class="{% if not p.is_active or p.expired %}text-muted{% endif %}">
+      <td><a href="{% url 'staffpanel:promo_edit' p.pk %}" class="fw-semibold font-monospace">{{ p.code }}</a></td>
+      <td class="text-end">{{ p.percent_off }}%</td>
+      <td class="small">{{ p.valid_until|date:"j M Y"|default:"No end date" }}</td>
+      <td class="text-end">{{ p.uses }}</td>
+      <td class="text-end">S${{ p.discounted|default:0|floatformat:2 }}</td>
+      <td>{% if not p.is_active %}<span class="badge text-bg-secondary">Off</span>{% elif p.expired %}<span class="badge text-bg-warning">Expired</span>{% else %}<span class="badge bc-badge">On</span>{% endif %}</td>
+      <td class="text-end">
+        <form method="post" action="{% url 'staffpanel:promo_toggle' p.pk %}">{% csrf_token %}
+          <button class="btn btn-sm bc-btn-outline">{% if p.is_active %}Turn off{% else %}Turn on{% endif %}</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="text-muted">No promo codes yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

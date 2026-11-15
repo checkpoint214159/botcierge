@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.get_full_name|default:customer.username }}{% endblock %}
+{% block content %}
+<a href="{% url 'staffpanel:customer_list' %}" class="small">&larr; All customers</a>
+<h1 class="h4 mt-2 mb-1">{{ customer.get_full_name|default:customer.username }}
+  {% if customer.is_active %}<span class="badge bc-badge">Active</span>{% else %}<span class="badge text-bg-secondary">Deactivated</span>{% endif %}</h1>
+<p class="text-muted mb-3">{{ customer.username }} · {% if customer.email %}<a href="mailto:{{ customer.email }}">{{ customer.email }}</a>{% else %}no email{% endif %}{% if profile.phone %} · {{ profile.phone }}{% endif %} · joined {{ customer.date_joined|date:"j M Y" }}{% if customer.last_login %} · last seen {{ customer.last_login|date:"j M Y" }}{% endif %}</p>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <section class="bc-card p-4 mb-3">
+      <h2 class="bc-section">Orders · {{ customer.n_orders }} booked, S${{ customer.spent|default:0|floatformat:2 }} spent</h2>
+      <div class="table-responsive">
+      <table class="table table-sm small align-middle mb-0">
+        <thead><tr><th>Order</th><th>Robot</th><th>Dates</th><th>Status</th><th class="text-end">Total</th></tr></thead>
+        {% for o in orders %}
+        <tr>
+          <td><a href="{% url 'staffpanel:order_detail' o.pk %}">#{{ o.pk }}</a></td>
+          <td>{{ o.recommendation.robot_model.name|default:"-" }}</td>
+          <td>{{ o.start_date|date:"j M" }} to {{ o.end_date|date:"j M Y" }}</td>
+          <td>{{ o.get_status_display }}</td>
+          <td class="text-end">S${{ o.total }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">No orders yet.</td></tr>{% endfor %}
+      </table>
+      </div>
+    </section>
+
+    <section class="bc-card p-4 mb-3">
+      <h2 class="bc-section">Support tickets</h2>
+      {% for t in tickets %}
+      <div class="small border-top py-1 d-flex justify-content-between">
+        <a href="{% url 'staffpanel:ticket_detail' t.pk %}">#{{ t.pk }} · {{ t.subject }}</a>
+        <span class="text-muted">{{ t.get_status_display }}{% if t.priority == "urgent" %} · urgent{% endif %}</span>
+      </div>
+      {% empty %}<p class="small text-muted mb-0">No tickets sent.</p>{% endfor %}
+    </section>
+
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Reviews</h2>
+      {% for rv in reviews %}
+      <div class="small border-top py-2">
+        <strong>{{ rv.rating }}&#9733;</strong> · {{ rv.robot_model.name }} · order #{{ rv.order_id }} · {{ rv.created_at|date:"j M Y" }}
+        {% if not rv.is_visible %}<span class="badge text-bg-secondary">Hidden</span>{% endif %}
+        {% if rv.comment %}<div>{{ rv.comment }}</div>{% endif %}
+      </div>
+      {% empty %}<p class="small text-muted mb-0">No reviews written.</p>{% endfor %}
+    </section>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="bc-sticky">
+      <section class="bc-card p-4 mb-3">
+        <h2 class="bc-section">Details</h2>
+        <dl class="small mb-0">
+          <dt>Housing</dt><dd>{{ profile.get_housing_type_display|default:"-" }}{% if profile %}, household of {{ profile.household_size }}{% endif %}</dd>
+          <dt>Addresses</dt>
+          <dd class="mb-0">{% for a in addresses %}<div>{{ a.label }}: {{ a.one_line }}{% if a.is_default %} <span class="text-muted">(default)</span>{% endif %}</div>{% empty %}none saved{% endfor %}</dd>
+        </dl>
+      </section>
+
+      <section class="bc-card p-4">
+        <h2 class="bc-section">Account</h2>
+        {% if customer.is_active %}
+        <p class="small text-muted">Deactivating stops this customer logging in. Their orders, tickets and reviews stay as they are.</p>
+        {% if live %}<div class="alert alert-warning small">They have {{ live|length }} live order{{ live|length|pluralize }}. Deactivating doesn't cancel {{ live|length|pluralize:"it,them" }}; cancel or finish {{ live|length|pluralize:"it,them" }} from the order page first if needed.</div>{% endif %}
+        <form method="post" action="{% url 'staffpanel:customer_toggle' customer.pk %}" onsubmit="return confirm('Deactivate this account? They will not be able to log in.')">{% csrf_token %}
+          <button class="btn btn-outline-danger w-100">Deactivate account</button>
+        </form>
+        {% else %}
+        <p class="small text-muted">This account can't log in.</p>
+        <form method="post" action="{% url 'staffpanel:customer_toggle' customer.pk %}">{% csrf_token %}
+          <button class="btn bc-btn w-100">Reactivate account</button>
+        </form>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

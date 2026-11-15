@@ -9,7 +9,7 @@ from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from catalog.taxonomy import PLATFORM_CHOICES, TASK_CATEGORY_CHOICES
 from config.form_mixins import BootstrapFormMixin
 from orders.forms import check_setup, skill_packs_for
-from orders.models import OrderItem
+from orders.models import OrderItem, PromoCode
 from planner.decomposer import eligible_robots
 from support.models import SupportTicket
 from orders.services import ONGOING  # orders that still hold their robot (until it's collected)
@@ -239,3 +239,39 @@ class TicketStatusForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = [c for c in self.fields["status"].choices if c[0] != "draft"]
+
+
+# ---------------------------------------------------------------- A11 promo codes
+
+class PromoCodeForm(BootstrapFormMixin, forms.ModelForm):
+    """A11. Codes are matched case-insensitively at checkout (orders.services.check_promo), so they are
+    stored in capitals and must be unique ignoring case. A code can't be renamed once it exists,
+    because past orders point at it."""
+
+    class Meta:
+        model = PromoCode
+        fields = ["code", "percent_off", "valid_until", "is_active"]
+        labels = {"percent_off": "Discount (% off the booking)", "valid_until": "Last day it works",
+                  "is_active": "Customers can use it"}
+        help_texts = {"valid_until": "Leave empty for no end date."}
+        widgets = {"valid_until": forms.DateInput(attrs={"type": "date"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields["code"].disabled = True
+            self.fields["code"].help_text = "Can't be changed after it's created."
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip().upper()
+        if not code.isalnum():
+            raise forms.ValidationError("Letters and numbers only, e.g. WELCOME10.")
+        if PromoCode.objects.filter(code__iexact=code).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("That code already exists.")
+        return code
+
+    def clean_percent_off(self):
+        pct = self.cleaned_data["percent_off"]
+        if not 1 <= pct <= 90:
+            raise forms.ValidationError("Between 1% and 90%.")
+        return pct

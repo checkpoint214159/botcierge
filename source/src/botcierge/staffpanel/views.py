@@ -9,6 +9,9 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import User
+from django.db.models import Count, Q, Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -18,17 +21,18 @@ from catalog.checks import catalogue_issues
 from catalog.models import AddOn, FleetUnit, RobotModel, SkillPack
 from catalog.taxonomy import PLATFORM_CHOICES, TASK_CATEGORY_CHOICES
 from orders import review
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, PromoCode
 from orders.services import ONGOING, NoUnitFree, advance_order, assignable_units, next_status, order_summary
 from support import queue as tickets
-from support.models import SupportTicket
+from support.models import Review, SupportTicket
+from planner import monitoring
 from planner.ml_registry import coverage, learned_codes, model_cards
 
 from . import dashboard as dash
 from .dashboard import SERVICE_INTERVAL_DAYS
 from .queue import go_to_next, queue_nav
 from .forms import (AddOnForm, FleetUnitForm, RobotModelForm, SetupOverrideForm, SkillPackForm,
-                    TicketReplyForm, TicketStatusForm)
+                    PromoCodeForm, TicketReplyForm, TicketStatusForm)
 
 staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url="accounts:login")
 
@@ -97,28 +101,39 @@ REVIEW_TABS = [(Order.Review.PENDING, "To review"), (Order.Review.REJECTED, "Nee
 
 @staff_required
 def review_list(request):
-    """All orders waiting for a check, grouped by ship day, most expensive first within a day."""
+    """All orders waiting for a check, grouped by ship day, most expensive first within a day.
+    ?sort=risk (A14) puts the orders with the most risk flags first instead."""
     state = request.GET.get("show", Order.Review.PENDING)
     if state not in Order.Review.values:
         state = Order.Review.PENDING
-    orders = review.review_queue(state)
-    for o in orders:
-        o.flags = review.risk_flags(o)
+    sort, query = _review_sort(request)
+    orders = review.review_queue(state, sort)
     counts = {s: Order.objects.filter(status=Order.Status.CONFIRMED, review_status=s).count()
               for s, _ in REVIEW_TABS}
     return render(request, "staffpanel/queue_list.html", {
         "title": "Review before dispatch",
-        "intro": "Check each paid order's plan before its robot ships. Soonest ship day first; within a day, "
-                 "the biggest orders first. An order can't be dispatched until it's approved.",
+        "intro": ("Check each paid order's plan before its robot ships. "
+                  + ("Orders with the most warnings first, so there's time to call the customer. " if sort == "risk" else
+                     "Soonest ship day first; within a day, the biggest orders first. ")
+                  + "An order can't be dispatched until it's approved."),
+        "sorts": review.SORTS.items(), "sort": sort, "detail_query": query,
         "tabs": [(s, label, counts[s]) for s, label in REVIEW_TABS], "state": state,
-        "groups": review.grouped(orders), "row_template": "staffpanel/_review_row.html",
-        "start_url": reverse("staffpanel:review_detail", args=[orders[0].pk]) if orders else None,
+        "groups": review.grouped(orders, sort), "row_template": "staffpanel/_review_row.html",
+        "start_url": reverse("staffpanel:review_detail", args=[orders[0].pk]) + query if orders else None,
         "start_label": "Start reviewing", "highlight_state": Order.Review.PENDING})
 
 
-def _next_to_review(request, order_pk, pending_ids):
+def _review_sort(request):
+    """("day" | "risk", query string to keep on links so the arrows follow the same order)."""
+    sort = request.GET.get("sort", "day")
+    if sort not in review.SORTS:
+        sort = "day"
+    return sort, ("?sort=risk" if sort == "risk" else "")
+
+
+def _next_to_review(request, order_pk, pending_ids, query):
     return go_to_next(request, order_pk, pending_ids, "staffpanel:review_detail", "staffpanel:review_list",
-                      "That was the last one. Nothing left to review.")
+                      "That was the last one. Nothing left to review.", query)
 
 
 @staff_required
@@ -129,7 +144,8 @@ def review_detail(request, pk):
     rec = order.recommendation
     tr = rec.task_request if rec else None
     can_act = order.status == Order.Status.CONFIRMED and tr is not None
-    pending_ids = [o.pk for o in review.review_queue(Order.Review.PENDING)]
+    sort, query = _review_sort(request)  # the form posts back to this URL, so ?sort= survives a POST
+    pending_ids = [o.pk for o in review.review_queue(Order.Review.PENDING, sort)]
 
     override = None
     if can_act:
@@ -142,14 +158,14 @@ def review_detail(request, pk):
         if action == "approve":
             review.approve(order, request.user, note)
             messages.success(request, f"Order #{order.pk} approved.")
-            return _next_to_review(request, order.pk, pending_ids)
+            return _next_to_review(request, order.pk, pending_ids, query)
         if action == "reject":
             if not note:
                 messages.error(request, "Say what needs following up, so whoever emails the customer knows.")
-                return redirect("staffpanel:review_detail", pk=order.pk)
+                return redirect(request.get_full_path())
             review.reject(order, request.user, note)
             messages.warning(request, f"Order #{order.pk} marked as needing follow-up.")
-            return _next_to_review(request, order.pk, pending_ids)
+            return _next_to_review(request, order.pk, pending_ids, query)
         if action == "override" and override.is_valid():
             d = override.cleaned_data
             try:
@@ -158,7 +174,7 @@ def review_detail(request, pk):
                 override.add_error("robot", "No unit of that robot is free on these dates.")
             else:
                 messages.success(request, "Setup changed. Check it, then approve.")
-                return redirect("staffpanel:review_detail", pk=order.pk)
+                return redirect(request.get_full_path())
 
     spec = tr.spec if tr else None
     return render(request, "staffpanel/review_detail.html", {
@@ -166,8 +182,8 @@ def review_detail(request, pk):
         "flags": review.risk_flags(order), "summary": order_summary(order),
         "history": tr.recommendations.select_related("robot_model", "skill_pack") if tr else [],
         "conditioning": json.dumps(rec.policy_conditioning, indent=2) if rec else "",
-        "nav": queue_nav(review.review_queue(order.review_status), order, "staffpanel:review_detail"),
-        "back_url": reverse("staffpanel:review_list") + f"?show={order.review_status}",
+        "nav": queue_nav(review.review_queue(order.review_status, sort), order, "staffpanel:review_detail", query),
+        "back_url": reverse("staffpanel:review_list") + f"?show={order.review_status}&sort={sort}",
         "state_label": order.get_review_status_display(),
     })
 
@@ -446,4 +462,126 @@ def ml_models(request):
     """The ML recommenders (M1-M5): what each decides, how well it scored, and whether it knows the current catalogue.
     Named "recommendation models" for staff so they aren't confused with skill packs (the robot's own software)."""
     return render(request, "staffpanel/ml_models.html", {
-        "cards": model_cards(), "sections": coverage(), "issues": _issues_for()})
+        "cards": model_cards(), "sections": coverage(), "issues": _issues_for(),
+        "accept": monitoring.acceptance()})
+
+
+@staff_required
+def ml_overrides_csv(request):
+    """A12: every customer or staff change to a recommendation, as labelled rows for retraining."""
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="recommendation_changes_{timezone.localdate():%Y%m%d}.csv"'
+    monitoring.write_overrides_csv(response)
+    return response
+
+
+# ---------------------------------------------------------------- A11 promo codes
+
+@staff_required
+def promo_list(request):
+    today = timezone.localdate()
+    promos = list(PromoCode.objects.annotate(
+        uses=Count("order", filter=~Q(order__status=Order.Status.CANCELLED)),
+        discounted=Sum("order__discount", filter=~Q(order__status=Order.Status.CANCELLED)))
+        .order_by("-is_active", "code"))
+    for p in promos:
+        p.expired = p.valid_until is not None and p.valid_until < today
+    return render(request, "staffpanel/promo_list.html", {"promos": promos})
+
+
+@staff_required
+def promo_edit(request, pk=None):
+    promo = get_object_or_404(PromoCode, pk=pk) if pk else PromoCode()
+    form = PromoCodeForm(request.POST or None, instance=promo)
+    if request.method == "POST" and form.is_valid():
+        return _save(request, form, "promo code", "staffpanel:promo_list")
+    return render(request, "staffpanel/form.html", {
+        "form": form, "title": f"Edit {promo.code}" if promo.pk else "New promo code",
+        "back": reverse("staffpanel:promo_list"), "aside": [], "no_tabs": True,
+        "intro": "Customers type the code at checkout and get this percentage off the booking subtotal. "
+                 "Turning a code off stops new bookings using it; past orders keep their discount."})
+
+
+@staff_required
+@require_POST
+def promo_toggle(request, pk):
+    return _toggle_active(request, PromoCode, pk, "staffpanel:promo_list", on="on", off="off")
+
+
+# ---------------------------------------------------------------- A06 customer accounts
+
+def _customers():
+    """Customer accounts only (staff are never listed or deactivated here), with order totals."""
+    paid = ~Q(orders__status__in=[Order.Status.PENDING_PAYMENT, Order.Status.CANCELLED])
+    return (User.objects.filter(is_staff=False)
+            .annotate(n_orders=Count("orders", filter=paid, distinct=True),
+                      spent=Sum("orders__total", filter=paid)))
+
+
+@staff_required
+def customer_list(request):
+    q, show = request.GET.get("q", "").strip(), request.GET.get("show", "")
+    customers = _customers().order_by("-date_joined")
+    if q:
+        customers = customers.filter(Q(username__icontains=q) | Q(first_name__icontains=q)
+                                     | Q(last_name__icontains=q) | Q(email__icontains=q))
+    if show == "deactivated":
+        customers = customers.filter(is_active=False)
+    return render(request, "staffpanel/customer_list.html", {"customers": customers, "q": q, "show": show})
+
+
+@staff_required
+def customer_detail(request, pk):
+    """Everything about one customer in one place: details, addresses, orders, tickets and reviews."""
+    customer = get_object_or_404(_customers(), pk=pk)
+    orders = customer.orders.select_related("recommendation__robot_model").order_by("-created_at")
+    return render(request, "staffpanel/customer_detail.html", {
+        "customer": customer, "profile": getattr(customer, "profile", None),
+        "addresses": customer.addresses.all(), "orders": orders,
+        "live": [o for o in orders if o.status in ONGOING],
+        "tickets": customer.tickets.exclude(status=SupportTicket.Status.DRAFT),
+        "reviews": customer.reviews.select_related("robot_model")})
+
+
+@staff_required
+@require_POST
+def customer_toggle(request, pk):
+    """Deactivate (or reactivate) a customer. A deactivated account can't log in, and anyone still
+    logged in is signed out on their next page. Orders and history are kept."""
+    customer = get_object_or_404(User, pk=pk, is_staff=False)
+    customer.is_active = not customer.is_active
+    customer.save(update_fields=["is_active"])
+    who = customer.get_full_name() or customer.username
+    if customer.is_active:
+        messages.success(request, f"{who} can log in again.")
+    else:
+        live = customer.orders.filter(status__in=ONGOING).count()
+        extra = f" They still have {live} live order{'s' if live != 1 else ''}, which go ahead as booked." if live else ""
+        messages.warning(request, f"{who} is deactivated and can't log in.{extra}")
+    return redirect("staffpanel:customer_detail", pk=customer.pk)
+
+
+# ---------------------------------------------------------------- A10 reviews
+
+@staff_required
+def customer_reviews(request):
+    """All customer reviews, newest first. Hidden reviews drop out of the robot's page and its rating."""
+    show = request.GET.get("show", "")
+    reviews = Review.objects.select_related("customer", "robot_model", "order").order_by("-created_at")
+    if show == "hidden":
+        reviews = reviews.filter(is_visible=False)
+    elif show == "low":
+        reviews = reviews.filter(rating__lte=2)
+    return render(request, "staffpanel/customer_reviews.html", {
+        "reviews": reviews, "show": show, "hidden": Review.objects.filter(is_visible=False).count()})
+
+
+@staff_required
+@require_POST
+def customer_review_toggle(request, pk):
+    rv = get_object_or_404(Review, pk=pk)
+    rv.is_visible = not rv.is_visible
+    rv.save(update_fields=["is_visible"])
+    messages.success(request, f"Review of order #{rv.order_id} is now {'shown' if rv.is_visible else 'hidden'}.")
+    back = request.POST.get("next", "")
+    return redirect(back if back.startswith("/staff/") else reverse("staffpanel:customer_reviews"))

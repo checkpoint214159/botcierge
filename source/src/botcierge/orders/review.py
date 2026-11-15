@@ -22,11 +22,23 @@ from .services import NoUnitFree, _release_unit, add_items, free_units
 ADJUSTMENT = "Adjustment by our team (no change to what you paid)"
 
 
-def review_queue(state=Order.Review.PENDING):
-    """Paid orders that haven't been dispatched yet, in review order."""
-    return list(Order.objects.filter(status=Order.Status.CONFIRMED, review_status=state)
-                .select_related("customer", "recommendation__task_request__spec", "recommendation__robot_model")
-                .order_by("start_date", "-total", "created_at"))
+SORTS = {"day": "By ship day", "risk": "Riskiest first"}
+
+
+def review_queue(state=Order.Review.PENDING, sort="day"):
+    """Paid orders that haven't been dispatched yet, in review order. Each gets .flags (see risk_flags).
+
+    sort="day": soonest ship day first, biggest order first within a day.
+    sort="risk" (A14): most flags first, so shaky recommendations are checked while there's time
+    to call the customer; ties keep the ship-day order."""
+    orders = list(Order.objects.filter(status=Order.Status.CONFIRMED, review_status=state)
+                  .select_related("customer", "recommendation__task_request__spec", "recommendation__robot_model")
+                  .order_by("start_date", "-total", "created_at"))
+    for o in orders:
+        o.flags = risk_flags(o)
+    if sort == "risk":
+        orders.sort(key=lambda o: -len(o.flags))  # stable, so ship-day order stays within each count
+    return orders
 
 
 def day_label(d) -> str:
@@ -40,13 +52,21 @@ def day_label(d) -> str:
     return f"Ships {d:%a %d %b}"
 
 
-def grouped(orders):
-    """[(label, [orders])] by ship day, keeping the queue order inside each day."""
+def risk_label(n) -> str:
+    return "Nothing flagged" if n == 0 else f"{n} thing{'s' if n > 1 else ''} to check"
+
+
+def grouped(orders, sort="day"):
+    """[(label, [orders])] by ship day (or by number of flags), keeping the queue order inside each."""
+    if sort == "risk":
+        return group_by(orders, key=lambda o: len(o.flags), label=risk_label)
     return group_by(orders, key=lambda o: o.start_date, label=day_label)
 
 
 def risk_flags(order) -> list[str]:
-    """Short reasons to look harder, from the ML output (also what A14 will sort by)."""
+    """Short reasons to look harder, from the ML output. A14's "riskiest first" sorts by how many there are.
+    spec.edge_cases are left out on purpose: most are setup notes (pets, quiet hours) the robot
+    config already handles, and the real risks among them (deadline, budget) are flagged here."""
     rec = order.recommendation
     if rec is None:
         return ["No plan attached"]
@@ -58,6 +78,9 @@ def risk_flags(order) -> list[str]:
         flags.append(f"Unsure of platform ({rec.platform_confidence:.0%})")
     if rec.source == Recommendation.Source.CUSTOMER:
         flags.append("Customer changed the setup")
+    robot = rec.robot_model
+    if robot and spec.task_category not in robot.category_list:
+        flags.append("Robot isn't listed for this task type")
     if not spec.feasible_in_time:
         flags.append("May not finish in time")
     if not spec.within_budget:
