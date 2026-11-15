@@ -14,7 +14,13 @@ hi im ben, and im manav, welcome to our is2108 project
 
 ## [prologue / project scope]
 
-(Ben's text, unchanged. One wording note: CLAUDE.md asks us to avoid "client" framing, so consider "customer requirements" in the first bullet.)
+emerging technology robotics, we were imagining the future of B2C RaaS, which would involve customers ordering robots for their tasks (instead of buying one, should they lack the space or expertise in maintenance, or ownership will not provide value).
+
+however, there lies a gap here: customers know what they want but may not be capable to describe it in a way that enables them to make a booking. 
+
+- this requires an intermediary ML recommendation service, to decompose client requirements, budgets and other specifications, into an actionable service we can provide
+- service includes delivery of the physical robot and its addons, alongside our custom-trained policies suited for their specific tasks.
+- our moat is the byproduct of this comprehensive coverage and convenience: we offer a one-stop solution for task specification and physical robot programming and delivery.
 
 ## [features]
 
