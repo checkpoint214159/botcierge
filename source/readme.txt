@@ -2,9 +2,9 @@ IS2108 Pair Project - Botcierge (home robots rented per job)
 
 Group number: PP38
 
-Group members (* = group leader)   <- TODO: mark the leader, add contact numbers
-    Benjamin Goh En Yang | A0320447L | contact: TODO
-    Manav Kontu          | A0321347L | contact: TODO
+Group members (* = group leader) 
+    Benjamin Goh En Yang* | A0320447L | contact: 86137633 | email: benjamin_en_yang.goh@u.nus.edu
+    Manav Kontu           | A0321347L | contact: 91789178 | email: manavk@u.nus.edu
 
 Demo video (YouTube): https://youtu.be/6XT8CO5QGNw
 
