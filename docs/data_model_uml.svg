@@ -1,0 +1,299 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1570" height="1303" viewBox="0 0 1570 1303" font-family="Segoe UI, Arial, sans-serif">
+<defs><marker id="diamond" viewBox="0 0 20 10" refX="0" refY="5" markerWidth="20" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,5 L10,0 L20,5 L10,10 z" fill="#4a4f55"/></marker></defs>
+<rect width="100%" height="100%" fill="#fff"/>
+<text x="40.0" y="42.0" font-size="22" font-weight="bold" text-anchor="start" fill="#1f2328">Botcierge data model</text>
+<text x="40.0" y="66.0" font-size="13" font-weight="normal" text-anchor="start" fill="#57606a">UML class diagram of the Django models (accounts, planner, catalog, orders, support)</text>
+<polyline points="160.0,272.0 160.0,220.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="169.0" y="252.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">1</text>
+<text x="151.0" y="237.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">0..1</text>
+<polyline points="160.0,404.0 160.0,456.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="169.0" y="432.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">1</text>
+<text x="151.0" y="447.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">*</text>
+<polyline points="280.0,312.0 350.0,312.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="293.0" y="307.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="337.0" y="325.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="280.0,474.0 305.0,474.0 305.0,378.0 350.0,378.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="293.0" y="469.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<text x="337.0" y="391.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="590.0,160.0 660.0,160.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="614.0" y="155.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="647.0" y="173.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="590.0,372.0 660.0,372.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="614.0" y="367.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="647.0" y="385.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="900.0,352.0 970.0,352.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="913.0" y="347.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="957.0" y="365.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="900.0,326.0 925.0,326.0 925.0,78.0 1400.0,78.0 1400.0,100.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="913.0" y="321.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="1409.0" y="91.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">0..1</text>
+<polyline points="900.0,446.0 970.0,446.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="913.0" y="441.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="957.0" y="459.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="1280.0,170.0 1210.0,170.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1267.0" y="165.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="1223.0" y="183.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="1210.0,338.0 1280.0,338.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1223.0" y="333.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="1267.0" y="351.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="780.0,464.0 780.0,658.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="789.0" y="481.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">0..1</text>
+<text x="771.0" y="649.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">*</text>
+<polyline points="660.0,698.0 590.0,698.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="636.0" y="693.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="603.0" y="711.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="660.0,832.0 590.0,832.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="636.0" y="827.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="603.0" y="845.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="780.0,842.0 780.0,894.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="789.0" y="859.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">*</text>
+<text x="771.0" y="885.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">0..1</text>
+<polyline points="900.0,688.0 970.0,688.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="924.0" y="683.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="957.0" y="701.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="1090.0,576.0 1090.0,658.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1099.0" y="593.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">0..1</text>
+<text x="1081.0" y="649.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">*</text>
+<polyline points="1210.0,680.0 1235.0,680.0 1235.0,362.0 1210.0,362.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1223.0" y="693.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="1223.0" y="357.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="1210.0,710.0 1400.0,710.0 1400.0,418.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1223.0" y="723.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="1409.0" y="435.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">0..1</text>
+<text x="1405.0" y="564.0" font-size="11" font-weight="normal" text-anchor="start" fill="#57606a" font-style="italic">assigned unit</text>
+<polyline points="1210.0,744.0 1545.0,744.0 1545.0,210.0 1520.0,210.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="1223.0" y="757.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<text x="1533.0" y="205.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="900.0,872.0 970.0,872.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="924.0" y="867.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="957.0" y="885.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<polyline points="40.0,342.0 22.0,342.0 22.0,628.0 700.0,628.0 700.0,658.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="27.0" y="337.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="691.0" y="649.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">*</text>
+<text x="705.0" y="637.0" font-size="11" font-weight="normal" text-anchor="start" fill="#57606a" font-style="italic">customer</text>
+<polyline points="40.0,362.0 12.0,362.0 12.0,688.0 40.0,688.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="27.0" y="375.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">1</text>
+<text x="27.0" y="683.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="660.0,800.0 280.0,800.0" fill="none" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="647.0" y="795.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">0..1</text>
+<text x="293.0" y="813.0" font-size="11.5" font-weight="normal" text-anchor="middle" fill="#1f2328">*</text>
+<polyline points="160.0,810.0 160.0,862.0" fill="none" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="169.0" y="838.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">1</text>
+<text x="151.0" y="853.0" font-size="11.5" font-weight="normal" text-anchor="end" fill="#1f2328">*</text>
+<rect x="40" y="100" width="240" height="120" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="40" y="100" width="240" height="28" fill="#dbe8f7" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="160.0" y="119.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">CustomerProfile</text>
+<text x="48.0" y="146.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">phone : str</text>
+<text x="48.0" y="162.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">postal_code : str</text>
+<text x="48.0" y="178.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">housing_type : HousingType</text>
+<text x="48.0" y="194.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">household_size : int</text>
+<text x="48.0" y="210.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_at : datetime</text>
+<rect x="40" y="272" width="240" height="132" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="40" y="272" width="240" height="40" fill="#e6e6e6" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="160.0" y="286.0" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#57606a">«Django built-in»</text>
+<text x="160.0" y="303.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">User</text>
+<text x="48.0" y="330.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">username : str</text>
+<text x="48.0" y="346.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">email : str</text>
+<text x="48.0" y="362.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">first_name, last_name : str</text>
+<text x="48.0" y="378.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_staff : bool</text>
+<text x="48.0" y="394.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_active : bool</text>
+<rect x="40" y="456" width="240" height="132" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="40" y="456" width="240" height="28" fill="#dbe8f7" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="160.0" y="475.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">Address</text>
+<text x="48.0" y="502.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">label : str</text>
+<text x="48.0" y="518.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">line, unit : str</text>
+<text x="48.0" y="534.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">postal_code : str  {6 digits}</text>
+<text x="48.0" y="550.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_default : bool</text>
+<line x1="40" y1="560" x2="280" y2="560" stroke="#4a4f55" stroke-width="1"/>
+<text x="48.0" y="578.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">one_line() : str</text>
+<rect x="350" y="100" width="240" height="292" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="350" y="100" width="240" height="28" fill="#e3f1dc" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="470.0" y="119.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">TaskRequest</text>
+<text x="358.0" y="146.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">description : text</text>
+<text x="358.0" y="162.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">category_hint : TaskCategory [0..1]</text>
+<text x="358.0" y="178.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">floor_plan : Image</text>
+<text x="358.0" y="194.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">keep_out_zones : JSON</text>
+<text x="358.0" y="210.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">housing_type, floor_type : str</text>
+<text x="358.0" y="226.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">area_m2 : decimal</text>
+<text x="358.0" y="242.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">num_rooms : int</text>
+<text x="358.0" y="258.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">has_stairs, is_outdoor, has_pets,</text>
+<text x="358.0" y="274.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">   has_children, fragile_items : bool</text>
+<text x="358.0" y="290.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">payload_kg, budget_sgd : decimal</text>
+<text x="358.0" y="306.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">start_date, deadline_date : date</text>
+<text x="358.0" y="322.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">hours_per_day : int</text>
+<text x="358.0" y="338.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">quiet_hours : str</text>
+<text x="358.0" y="354.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : RequestStatus</text>
+<line x1="350" y1="364" x2="590" y2="364" stroke="#4a4f55" stroke-width="1"/>
+<text x="358.0" y="382.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">duration_days() : int</text>
+<rect x="660" y="100" width="240" height="168" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="660" y="100" width="240" height="28" fill="#e3f1dc" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="780.0" y="119.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">TaskSpec</text>
+<text x="668.0" y="146.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">task_category : TaskCategory</text>
+<text x="668.0" y="162.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">category_confidence : float</text>
+<text x="668.0" y="178.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">subtasks : JSON</text>
+<text x="668.0" y="194.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">edge_cases : JSON</text>
+<text x="668.0" y="210.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">est_robot_hours : float</text>
+<text x="668.0" y="226.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">est_days_needed : int</text>
+<text x="668.0" y="242.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">feasible_in_time : bool</text>
+<text x="668.0" y="258.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">within_budget : bool</text>
+<rect x="660" y="312" width="240" height="152" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="660" y="312" width="240" height="28" fill="#e3f1dc" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="780.0" y="331.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">Recommendation</text>
+<text x="668.0" y="358.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">source : Source</text>
+<text x="668.0" y="374.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">predicted_platform : Platform</text>
+<text x="668.0" y="390.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">platform_confidence : float</text>
+<text x="668.0" y="406.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">policy_conditioning : JSON</text>
+<text x="668.0" y="422.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">quoted_price : decimal</text>
+<text x="668.0" y="438.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">price_breakdown : JSON</text>
+<text x="668.0" y="454.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_selected : bool</text>
+<rect x="970" y="100" width="240" height="276" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="970" y="100" width="240" height="28" fill="#fdebd3" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1090.0" y="119.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">RobotModel</text>
+<text x="978.0" y="146.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">name, slug : str</text>
+<text x="978.0" y="162.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">platform : Platform</text>
+<text x="978.0" y="178.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">manufacturer : str</text>
+<text x="978.0" y="194.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">daily_rate : decimal</text>
+<text x="978.0" y="210.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">indoor, outdoor : bool</text>
+<text x="978.0" y="226.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">can_climb_stairs : bool</text>
+<text x="978.0" y="242.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">max_payload_kg : decimal</text>
+<text x="978.0" y="258.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">battery_hours : decimal</text>
+<text x="978.0" y="274.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">noise_db : int</text>
+<text x="978.0" y="290.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">task_categories : str  (CSV)</text>
+<text x="978.0" y="306.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">image : Image</text>
+<text x="978.0" y="322.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_active : bool</text>
+<line x1="970" y1="332" x2="1210" y2="332" stroke="#4a4f55" stroke-width="1"/>
+<text x="978.0" y="350.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">category_list() : list</text>
+<text x="978.0" y="366.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">available_units() : int</text>
+<rect x="970" y="428" width="240" height="148" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="970" y="428" width="240" height="28" fill="#fdebd3" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1090.0" y="447.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">AddOn</text>
+<text x="978.0" y="474.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">code : str  {unique}</text>
+<text x="978.0" y="490.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">name : str</text>
+<text x="978.0" y="506.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">daily_rate : decimal</text>
+<text x="978.0" y="522.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">compatible_platforms : str  (CSV)</text>
+<text x="978.0" y="538.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_active : bool</text>
+<line x1="970" y1="548" x2="1210" y2="548" stroke="#4a4f55" stroke-width="1"/>
+<text x="978.0" y="566.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">fits(platform) : bool</text>
+<rect x="1280" y="100" width="240" height="152" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="1280" y="100" width="240" height="28" fill="#fdebd3" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1400.0" y="119.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">SkillPack</text>
+<text x="1288.0" y="146.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">code : str  {unique}</text>
+<text x="1288.0" y="162.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">name, version : str</text>
+<text x="1288.0" y="178.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">summary : str</text>
+<text x="1288.0" y="194.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">flat_fee : decimal</text>
+<text x="1288.0" y="210.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">task_categories : str  (CSV)</text>
+<text x="1288.0" y="226.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">default_conditioning : JSON</text>
+<text x="1288.0" y="242.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_active : bool</text>
+<rect x="1280" y="298" width="240" height="120" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="1280" y="298" width="240" height="28" fill="#fdebd3" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1400.0" y="317.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">FleetUnit</text>
+<text x="1288.0" y="344.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">serial_number : str  {unique}</text>
+<text x="1288.0" y="360.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : UnitStatus</text>
+<text x="1288.0" y="376.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">depot : str</text>
+<text x="1288.0" y="392.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">last_serviced : date</text>
+<text x="1288.0" y="408.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">notes : text</text>
+<rect x="40" y="658" width="240" height="152" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="40" y="658" width="240" height="28" fill="#fbe0e0" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="160.0" y="677.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">SupportTicket</text>
+<text x="48.0" y="704.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">subject : str</text>
+<text x="48.0" y="720.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">category : TicketCategory</text>
+<text x="48.0" y="736.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">description : text</text>
+<text x="48.0" y="752.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : TicketStatus</text>
+<text x="48.0" y="768.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">priority : Priority</text>
+<text x="48.0" y="784.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">submitted_at : datetime</text>
+<text x="48.0" y="800.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">reply_draft : text  (staff only)</text>
+<rect x="40" y="862" width="240" height="88" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="40" y="862" width="240" height="28" fill="#fbe0e0" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="160.0" y="881.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">TicketMessage</text>
+<text x="48.0" y="908.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">author : User</text>
+<text x="48.0" y="924.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">body : text</text>
+<text x="48.0" y="940.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_at : datetime</text>
+<rect x="350" y="658" width="240" height="120" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="350" y="658" width="240" height="28" fill="#efe2f5" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="470.0" y="677.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">Payment</text>
+<text x="358.0" y="704.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">method : str</text>
+<text x="358.0" y="720.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">amount : decimal</text>
+<text x="358.0" y="736.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : PaymentStatus</text>
+<text x="358.0" y="752.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">reference : str</text>
+<text x="358.0" y="768.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">paid_at : datetime</text>
+<rect x="350" y="822" width="240" height="104" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="350" y="822" width="240" height="28" fill="#efe2f5" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="470.0" y="841.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">OrderStatusEvent</text>
+<text x="358.0" y="868.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : OrderStatus</text>
+<text x="358.0" y="884.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">note : str</text>
+<text x="358.0" y="900.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_by : User [0..1]</text>
+<text x="358.0" y="916.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_at : datetime</text>
+<rect x="660" y="658" width="240" height="184" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="660" y="658" width="240" height="28" fill="#efe2f5" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="780.0" y="677.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">Order</text>
+<text x="668.0" y="704.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">status : OrderStatus</text>
+<text x="668.0" y="720.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">start_date, end_date : date</text>
+<text x="668.0" y="736.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">delivery_address : str</text>
+<text x="668.0" y="752.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">subtotal, discount, total : decimal</text>
+<text x="668.0" y="768.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_at : datetime</text>
+<text x="668.0" y="784.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">review_status : ReviewStatus</text>
+<text x="668.0" y="800.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">review_note : text</text>
+<text x="668.0" y="816.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">reviewed_by : User [0..1]</text>
+<text x="668.0" y="832.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">reviewed_at : datetime</text>
+<rect x="660" y="894" width="240" height="104" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="660" y="894" width="240" height="28" fill="#efe2f5" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="780.0" y="913.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">PromoCode</text>
+<text x="668.0" y="940.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">code : str  {unique}</text>
+<text x="668.0" y="956.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">percent_off : int</text>
+<text x="668.0" y="972.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">valid_until : date [0..1]</text>
+<text x="668.0" y="988.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_active : bool</text>
+<rect x="970" y="658" width="240" height="132" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="970" y="658" width="240" height="28" fill="#efe2f5" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1090.0" y="677.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">OrderItem</text>
+<text x="978.0" y="704.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">kind : ItemKind</text>
+<text x="978.0" y="720.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">description : str</text>
+<text x="978.0" y="736.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">quantity : int  (days)</text>
+<text x="978.0" y="752.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">unit_price : decimal</text>
+<line x1="970" y1="762" x2="1210" y2="762" stroke="#4a4f55" stroke-width="1"/>
+<text x="978.0" y="780.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">line_total() : decimal</text>
+<rect x="970" y="852" width="240" height="136" fill="#fff" stroke="#4a4f55" stroke-width="1.2"/>
+<rect x="970" y="852" width="240" height="28" fill="#fbe0e0" stroke="#4a4f55" stroke-width="1.2"/>
+<text x="1090.0" y="871.0" font-size="14" font-weight="bold" text-anchor="middle" fill="#1f2328">Review</text>
+<text x="978.0" y="898.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">rating : int  {1..5}</text>
+<text x="978.0" y="914.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">comment : text</text>
+<text x="978.0" y="930.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">is_visible : bool</text>
+<text x="978.0" y="946.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">robot_model : RobotModel</text>
+<text x="978.0" y="962.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">skill_pack : SkillPack [0..1]</text>
+<text x="978.0" y="978.0" font-size="12.5" font-weight="normal" text-anchor="start" fill="#1f2328">created_at : datetime</text>
+<rect x="40" y="1038" width="1480" height="245" fill="#fafbfc" stroke="#d0d7de"/>
+<text x="54.0" y="1060.0" font-size="13" font-weight="bold" text-anchor="start" fill="#1f2328">Legend</text>
+<rect x="54" y="1069" width="14" height="14" fill="#e6e6e6" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1080.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">Django auth</text>
+<rect x="54" y="1087" width="14" height="14" fill="#dbe8f7" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1098.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">accounts</text>
+<rect x="54" y="1105" width="14" height="14" fill="#e3f1dc" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1116.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">planner (ML recommendation)</text>
+<rect x="54" y="1123" width="14" height="14" fill="#fdebd3" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1134.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">catalog</text>
+<rect x="54" y="1141" width="14" height="14" fill="#efe2f5" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1152.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">orders</text>
+<rect x="54" y="1159" width="14" height="14" fill="#fbe0e0" stroke="#4a4f55" stroke-width="0.8"/>
+<text x="76.0" y="1170.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">support</text>
+<polyline points="54,1188 94,1188" stroke="#4a4f55" stroke-width="1.3" marker-start="url(#diamond)"/>
+<text x="102.0" y="1192.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">composition: part is deleted with its owner</text>
+<line x1="54" y1="1206" x2="94" y2="1206" stroke="#4a4f55" stroke-width="1.3"/>
+<text x="102.0" y="1210.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#1f2328">association (foreign key), with multiplicities</text>
+<text x="54.0" y="1228.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#57606a">Every class also has an integer id (PK), not shown.</text>
+<text x="54.0" y="1244.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#57606a">An attribute typed with a class (e.g. reviewed_by : User)</text>
+<text x="54.0" y="1260.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#57606a">   is a foreign key whose line is left out for readability.</text>
+<text x="54.0" y="1276.0" font-size="11.5" font-weight="normal" text-anchor="start" fill="#57606a">OrderItem references exactly one of robot / add-on / skill pack.</text>
+<text x="460.0" y="1060.0" font-size="13" font-weight="bold" text-anchor="start" fill="#1f2328">Enumerations (Django TextChoices)</text>
+<text x="460" y="1080" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">OrderStatus</tspan><tspan fill="#57606a">: pending_payment | confirmed | dispatched | on_site | running |</tspan></text>
+<text x="460" y="1098" font-size="11.5" fill="#1f2328"><tspan font-weight="bold"></tspan><tspan fill="#57606a">      completed | collected | cancelled</tspan></text>
+<text x="460" y="1116" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">ReviewStatus</tspan><tspan fill="#57606a">: pending | approved | rejected</tspan></text>
+<text x="460" y="1134" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">UnitStatus</tspan><tspan fill="#57606a">: available | reserved | deployed | maintenance | retired</tspan></text>
+<text x="460" y="1152" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">Source</tspan><tspan fill="#57606a">: ml | customer | staff</tspan></text>
+<text x="460" y="1170" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">ItemKind</tspan><tspan fill="#57606a">: robot | addon | skill_pack | service</tspan></text>
+<text x="460" y="1188" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">PaymentStatus</tspan><tspan fill="#57606a">: pending | paid | refunded</tspan></text>
+<text x="1020" y="1080" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">TicketStatus</tspan><tspan fill="#57606a">: draft | open | in_progress | resolved | closed</tspan></text>
+<text x="1020" y="1098" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">TicketCategory</tspan><tspan fill="#57606a">: robot | safety | schedule | billing | other</tspan></text>
+<text x="1020" y="1116" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">Priority</tspan><tspan fill="#57606a">: low | normal | urgent</tspan></text>
+<text x="1020" y="1134" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">RequestStatus</tspan><tspan fill="#57606a">: draft | planned | booked</tspan></text>
+<text x="1020" y="1152" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">HousingType</tspan><tspan fill="#57606a">: hdb | condo | landed | shophouse</tspan></text>
+<text x="1020" y="1170" font-size="11.5" fill="#1f2328"><tspan font-weight="bold">TaskCategory, Platform</tspan><tspan fill="#57606a">: 8 values each, fixed in catalog/taxonomy.py</tspan></text>
+</svg>
