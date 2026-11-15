@@ -1,0 +1,15 @@
+{# A09 queue card for one ticket. Gets item (a SupportTicket with .flags and .waiting) and top. #}
+{% with t=item %}
+<div class="bc-card bc-row-link p-3 mb-2 position-relative {% if top %}border-2 border-primary-subtle{% endif %}">
+  <div class="d-flex gap-3 align-items-center flex-wrap">
+    <div class="flex-grow-1">
+      <a href="{% url 'staffpanel:ticket_detail' t.pk %}" class="fw-semibold stretched-link text-reset text-decoration-none">
+        #{{ t.pk }} · {{ t.subject }}</a>
+      <div class="small text-muted">{{ t.customer.get_full_name|default:t.customer.username }} · {{ t.get_category_display }}{% if t.order %} · order #{{ t.order.pk }} ({{ t.order.get_status_display|lower }}){% endif %}</div>
+      {% include "staffpanel/_flags.html" with flags=t.flags %}
+      {% if t.reply_draft %}<div class="small mt-1"><span class="text-muted">&#9998; Draft reply:</span> {{ t.reply_draft|truncatechars:100 }}</div>{% endif %}
+    </div>
+    <div class="text-end small text-muted">{% if t.status == "open" %}waiting {% else %}sent {% endif %}{{ t.waiting }}</div>
+  </div>
+</div>
+{% endwith %}

@@ -1,0 +1,13 @@
+{% comment %}
+Top bar of a one-at-a-time queue page (A08, A09): back to the list, position, ← / → arrows.
+Needs: back_url, nav (from staffpanel.queue.queue_nav), state_label. The arrow keys come from
+static/js/queue_keys.js, which looks for the #prev / #next links below.
+{% endcomment %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+  <a href="{{ back_url }}" class="small">&larr; Back to the list</a>
+  <div class="d-flex align-items-center gap-2">
+    {% if nav.position %}<span class="small text-muted">{{ nav.position }} of {{ nav.size }} · {{ state_label|lower }}</span>{% endif %}
+    {% if nav.prev_url %}<a id="prev" href="{{ nav.prev_url }}" class="btn btn-sm bc-btn-outline" title="Previous (← key)">&larr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&larr;</span>{% endif %}
+    {% if nav.next_url %}<a id="next" href="{{ nav.next_url }}" class="btn btn-sm bc-btn-outline" title="Next (→ key)">&rarr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&rarr;</span>{% endif %}
+  </div>
+</div>

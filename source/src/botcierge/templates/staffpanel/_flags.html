@@ -1,0 +1,2 @@
+{# Yellow "look harder" badges on queue cards and detail pages. Needs: flags (list of strings). #}
+{% if flags %}<div class="{{ css|default:'mt-1' }}">{% for f in flags %}<span class="badge text-bg-warning-subtle text-warning-emphasis border me-1">{{ f }}</span>{% endfor %}</div>{% endif %}

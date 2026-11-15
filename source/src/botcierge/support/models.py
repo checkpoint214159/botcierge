@@ -56,6 +56,9 @@ class SupportTicket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
+    # A09: staff can save a reply before sending it, the same way customers save a ticket as a draft.
+    # It lives on the ticket, not as a TicketMessage, so the customer's page can never show it.
+    reply_draft = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-updated_at"]

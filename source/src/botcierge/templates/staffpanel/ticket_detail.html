@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ticket #{{ ticket.pk }}{% endblock %}
+{% block content %}
+{% include "staffpanel/_queue_nav.html" %}
+
+<h1 class="h4 mb-1">#{{ ticket.pk }} · {{ ticket.subject }}
+  <span class="badge {% if ticket.status == 'open' %}text-bg-light border{% elif ticket.status == 'in_progress' %}text-bg-warning{% else %}bc-badge{% endif %}">{{ ticket.get_status_display }}</span>
+  {% if ticket.priority == "urgent" %}<span class="badge text-bg-danger">Urgent</span>{% endif %}</h1>
+<p class="text-muted mb-3">{{ ticket.customer.get_full_name|default:ticket.customer.username }}
+  ({% if ticket.customer.email %}<a href="mailto:{{ ticket.customer.email }}?subject=Botcierge%20ticket%20%23{{ ticket.pk }}">{{ ticket.customer.email }}</a>{% else %}no email{% endif %})
+  · {{ ticket.get_category_display }} · sent {{ ticket.submitted_at|date:"D j M, H:i" }} ({{ waiting }})</p>
+
+{% include "staffpanel/_flags.html" with css="mb-3" %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <section class="bc-card p-4 mb-3">
+      <h2 class="bc-section">Conversation</h2>
+      <div class="border-start ps-3 mb-3">
+        <div class="small"><strong>Customer</strong> <span class="text-muted">· {{ ticket.submitted_at|date:"j M, H:i" }}</span></div>
+        <div style="white-space: pre-line">{{ ticket.description|default:"(no details given)" }}</div>
+      </div>
+      {% for m in conversation %}
+      <div class="border-start ps-3 mb-3 {% if m.author.is_staff %}border-success{% endif %}">
+        <div class="small"><strong>{% if m.author.is_staff %}Botcierge support ({{ m.author.first_name|default:m.author.username }}){% else %}Customer{% endif %}</strong>
+          <span class="text-muted">· {{ m.created_at|date:"j M, H:i" }}</span></div>
+        <div style="white-space: pre-line">{{ m.body }}</div>
+      </div>
+      {% empty %}
+      <p class="small text-muted mb-0">No reply yet.</p>
+      {% endfor %}
+    </section>
+
+    {% if order %}
+    <section class="bc-card p-4 mb-3">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <h2 class="bc-section">Order #{{ order.pk }}</h2>
+        <span class="small">
+          <a href="{% url 'staffpanel:order_detail' order.pk %}">Fleet unit and status</a>
+          {% if order.status == "confirmed" %} · <a href="{% url 'staffpanel:review_detail' order.pk %}">Plan review</a>{% endif %}
+        </span>
+      </div>
+      <p class="small text-muted">{{ order.get_status_display }} · {{ order.start_date|date:"j M" }} to {{ order.end_date|date:"j M Y" }} · {{ order.delivery_address }}</p>
+      {% include "partials/setup_summary.html" with robot=summary.robot addons=summary.addons skill_pack=summary.skill_pack lines=summary.lines total=summary.total total_label="Paid" discount=summary.discount promo_code=summary.promo_code %}
+    </section>
+    {% endif %}
+
+    {% if other_tickets %}
+    <section class="bc-card p-4">
+      <h2 class="bc-section">Other tickets from this customer</h2>
+      <ul class="small mb-0">
+        {% for o in other_tickets %}<li><a href="{% url 'staffpanel:ticket_detail' o.pk %}">#{{ o.pk }} {{ o.subject }}</a> · {{ o.get_status_display|lower }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="bc-sticky">
+      <section class="bc-card p-4 mb-3">
+        <h2 class="bc-section">Reply</h2>
+        {% if ticket.reply_draft %}<p class="small text-muted mb-2">&#9998; A draft is saved below. The customer can't see it until you send it.</p>{% endif %}
+        <form method="post">{% csrf_token %}
+          {% for field in reply %}{% include "partials/field.html" %}{% endfor %}
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn bc-btn-outline" name="action" value="draft">Save draft</button>
+            <button class="btn bc-btn-outline" name="action" value="send_resolve">Send and resolve</button>
+            <button class="btn bc-btn flex-grow-1" name="action" value="send">Send reply</button>
+          </div>
+        </form>
+        <p class="small text-muted mt-2 mb-0">Sent replies show on the customer's support page. After sending, the next ticket waiting for an answer opens.</p>
+      </section>
+
+      <section class="bc-card p-4">
+        <h2 class="bc-section">Status</h2>
+        <form method="post" class="bc-staff-form">{% csrf_token %}
+          <input type="hidden" name="action" value="status">
+          {% for field in status_form %}{% include "partials/field.html" %}{% endfor %}
+          <button class="btn bc-btn-outline w-100">Update ticket</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/queue_keys.js' %}"></script>
+{% endblock %}

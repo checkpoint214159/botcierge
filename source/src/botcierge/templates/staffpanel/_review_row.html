@@ -1,0 +1,16 @@
+{# A08 queue card for one order. Gets item (an Order with .flags) and top (outline it as next up). #}
+{% with o=item rec=item.recommendation %}
+<div class="bc-card bc-row-link p-3 mb-2 position-relative {% if top %}border-2 border-primary-subtle{% endif %}">
+  <div class="d-flex gap-3 align-items-center flex-wrap">
+    {% if rec.robot_model %}{% include "partials/robot_photo.html" with robot=rec.robot_model css="bc-frame-xs" %}{% endif %}
+    <div class="flex-grow-1">
+      <a href="{% url 'staffpanel:review_detail' o.pk %}" class="fw-semibold stretched-link text-reset text-decoration-none">
+        Order #{{ o.pk }} · {{ rec.task_request.spec.get_task_category_display }}</a>
+      <div class="small text-muted">{{ o.customer.get_full_name|default:o.customer.username }} · {{ rec.robot_model.name|default:"no robot" }} · {{ o.start_date|date:"j M" }} to {{ o.end_date|date:"j M" }}</div>
+      {% include "staffpanel/_flags.html" with flags=o.flags %}
+      {% if o.review_note %}<div class="small mt-1"><span class="text-muted">Note:</span> {{ o.review_note|truncatechars:120 }}</div>{% endif %}
+    </div>
+    <div class="text-end fw-bold">S${{ o.total }}</div>
+  </div>
+</div>
+{% endwith %}

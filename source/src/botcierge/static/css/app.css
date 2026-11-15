@@ -143,3 +143,14 @@ a.bc-card:hover { border-color: var(--bc-ink); }
 .bc-chips-menu li { padding: .3rem .75rem; cursor: pointer; font-size: .9rem; }
 .bc-chips-menu li.active, .bc-chips-menu li:hover { background: var(--bs-secondary-bg); }
 .bc-chips-menu li.empty { cursor: default; color: var(--bs-secondary-color); }
+
+/* A02 dashboard: stat tiles and two single-series bar charts (one accent colour, hover title per bar) */
+.bc-tile { display: block; padding: .75rem; border: 1px solid var(--bc-line); border-radius: 10px; color: inherit; text-decoration: none; height: 100%; }
+a.bc-tile:hover { border-color: var(--bc-ink); }
+.bc-tile .bc-v { font-size: 1.35rem; line-height: 1.2; }
+.bc-bars { display: flex; align-items: flex-end; gap: 2px; height: 90px; border-bottom: 1px solid var(--bc-line); }
+.bc-bar-slot { flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.bc-bar-slot:hover { background: var(--bc-accent-soft); }
+.bc-bar { width: 100%; background: var(--bc-accent); border-radius: 4px 4px 0 0; }
+.bc-hbar { height: 6px; background: var(--bc-line); border-radius: 3px; }
+.bc-hbar > div { height: 100%; background: var(--bc-accent); border-radius: 3px; }

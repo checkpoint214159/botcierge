@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="h4 mb-1">Dashboard</h1>
+<p class="text-muted small mb-3">Today, {% now "l j F" %}. Each panel links to the page where you act on it.</p>
+
+<div class="row g-4">
+  {# ------------------------------------------------ bookings: first, because it has today's work #}
+  <div class="col-lg-6">
+    <section class="bc-card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <h2 class="bc-section">Bookings</h2>
+        <a href="{% url 'staffpanel:order_list' %}" class="small">All orders</a>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-4"><a class="bc-tile" href="{% url 'staffpanel:review_list' %}"><div class="bc-v">{{ bookings.to_review }}</div><div class="bc-k">To review</div></a></div>
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">{{ bookings.ships_today }}<small class="text-muted fs-6"> / {{ bookings.ships_tomorrow }}</small></div><div class="bc-k">Ship today / tomorrow</div></div></div>
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">{{ bookings.out }}</div><div class="bc-k">Out with customers</div></div></div>
+      </div>
+      <ul class="small list-unstyled mb-3">
+        {% if bookings.overdue %}<li class="text-danger">{{ bookings.overdue }} paid order{{ bookings.overdue|pluralize }} should have shipped already.</li>{% endif %}
+        {% if bookings.follow_up %}<li><a href="{% url 'staffpanel:review_list' %}?show=rejected">{{ bookings.follow_up }} order{{ bookings.follow_up|pluralize }} need{{ bookings.follow_up|pluralize:"s," }} follow-up with the customer</a></li>{% endif %}
+        <li>{{ bookings.to_collect }} finished job{{ bookings.to_collect|pluralize }} waiting for collection · {{ bookings.cancelled }} cancelled in 30 days</li>
+      </ul>
+      <div class="bc-k mb-1">Shipping next</div>
+      {% for o in bookings.upcoming %}
+      <div class="d-flex justify-content-between small border-top py-1">
+        <a href="{% url 'staffpanel:order_detail' o.pk %}">#{{ o.pk }} · {{ o.recommendation.robot_model.name|default:"no robot" }}</a>
+        <span class="text-muted">{{ o.start_date|date:"D j M" }} · {% if o.review_status == "approved" %}approved{% elif o.review_status == "rejected" %}<span class="text-warning-emphasis">follow-up</span>{% else %}to review{% endif %}</span>
+      </div>
+      {% empty %}<p class="small text-muted mb-0">Nothing booked to ship.</p>{% endfor %}
+    </section>
+  </div>
+
+  {# ------------------------------------------------ support #}
+  <div class="col-lg-6">
+    <section class="bc-card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <h2 class="bc-section">Support</h2>
+        <a href="{% url 'staffpanel:ticket_list' %}" class="small">Ticket queue</a>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-4"><a class="bc-tile" href="{% url 'staffpanel:ticket_list' %}"><div class="bc-v">{{ support.to_answer }}</div><div class="bc-k">To answer</div></a></div>
+        <div class="col-4"><div class="bc-tile"><div class="bc-v {% if support.urgent %}text-danger{% endif %}">{{ support.urgent }}</div><div class="bc-k">Urgent</div></div></div>
+        <div class="col-4"><a class="bc-tile" href="{% url 'staffpanel:ticket_list' %}?show=in_progress"><div class="bc-v">{{ support.in_progress }}</div><div class="bc-k">In progress</div></a></div>
+      </div>
+      <ul class="small list-unstyled mb-3">
+        {% if support.oldest %}<li>Oldest unanswered ticket was sent {{ support.oldest }}.</li>{% endif %}
+        {% if support.drafted %}<li>&#9998; {{ support.drafted }} reply draft{{ support.drafted|pluralize }} not sent yet.</li>{% endif %}
+        <li>{{ support.resolved_week }} resolved in the last 7 days.</li>
+      </ul>
+      <div class="bc-k mb-1">Answer next</div>
+      {% for t, waited in support.next %}
+      <div class="d-flex justify-content-between small border-top py-1">
+        <a href="{% url 'staffpanel:ticket_detail' t.pk %}">#{{ t.pk }} · {{ t.subject|truncatechars:45 }}</a>
+        <span class="text-muted">{% if t.priority == "urgent" %}<span class="text-danger">urgent</span> · {% endif %}{{ waited }}</span>
+      </div>
+      {% empty %}<p class="small text-muted mb-0">No tickets waiting. Nice.</p>{% endfor %}
+    </section>
+  </div>
+
+  {# ------------------------------------------------ business #}
+  <div class="col-lg-6">
+    <section class="bc-card p-4 h-100">
+      <h2 class="bc-section">Business · last {{ business.window }} days</h2>
+      <div class="row g-3 mb-3">
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">S${{ business.revenue|floatformat:"0g" }}</div><div class="bc-k">Revenue</div></div></div>
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">{{ business.orders }}</div><div class="bc-k">Paid bookings</div></div></div>
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">S${{ business.average|floatformat:"0g" }}</div><div class="bc-k">Average booking</div></div></div>
+      </div>
+
+      <div class="bc-k mb-1">Revenue per day, last {{ business.chart_days }} days</div>
+      <div class="bc-bars" role="img" aria-label="Daily revenue bar chart; the amounts are in the table below the chart">
+        {% for d in business.daily %}
+        <div class="bc-bar-slot" title="{{ d.day|date:'D j M' }}: S${{ d.amount|floatformat:2 }}">
+          <div class="bc-bar" style="height: {{ d.height }}%"></div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="d-flex justify-content-between small text-muted mb-2">
+        <span>{{ business.daily.0.day|date:"j M" }}</span><span>today</span>
+      </div>
+      <details class="small mb-3">
+        <summary class="text-muted">Show as a table</summary>
+        <table class="table table-sm small mb-0">
+          {% for d in business.daily %}<tr><td>{{ d.day|date:"D j M" }}</td><td class="text-end">S${{ d.amount|floatformat:2 }}</td></tr>{% endfor %}
+        </table>
+      </details>
+
+      <div class="bc-k mb-1">Revenue by task type</div>
+      {% for t in business.types %}
+      <div class="small mb-1" title="{{ t.label }}: S${{ t.amount|floatformat:2 }}">
+        <div class="d-flex justify-content-between"><span>{{ t.label }}</span><span>S${{ t.amount|floatformat:"0g" }}</span></div>
+        <div class="bc-hbar"><div style="width: {{ t.width }}%"></div></div>
+      </div>
+      {% empty %}<p class="small text-muted">No paid bookings yet.</p>{% endfor %}
+
+      <p class="small text-muted mt-3 mb-0">
+        {{ business.refunds }} refund{{ business.refunds|pluralize }} (S${{ business.refunded|floatformat:2 }}) ·
+        {% if business.rating %}average rating {{ business.rating|floatformat:1 }}&#9733; from {{ business.rating_count }} review{{ business.rating_count|pluralize }}{% else %}no reviews yet{% endif %}
+      </p>
+    </section>
+  </div>
+
+  {# ------------------------------------------------ catalogue and fleet #}
+  <div class="col-lg-6">
+    <section class="bc-card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <h2 class="bc-section">Catalogue and fleet</h2>
+        <a href="{% url 'staffpanel:fleet_list' %}" class="small">Fleet units</a>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-4"><div class="bc-tile"><div class="bc-v">{{ fleet.utilisation }}%</div><div class="bc-k">Fleet in use</div></div></div>
+        <div class="col-4"><a class="bc-tile" href="{% url 'staffpanel:robot_list' %}"><div class="bc-v">{{ fleet.robots_listed }}</div><div class="bc-k">Robots listed</div></a></div>
+        <div class="col-4"><a class="bc-tile" href="{% url 'staffpanel:fleet_list' %}"><div class="bc-v {% if fleet.service_due %}text-warning-emphasis{% endif %}">{{ fleet.service_due }}</div><div class="bc-k">Due a service</div></a></div>
+      </div>
+
+      <div class="bc-k mb-1">{{ fleet.units }} units by status</div>
+      {% for label, n, pct in fleet.status_rows %}
+      <div class="small mb-1" title="{{ label }}: {{ n }} of {{ fleet.units }}">
+        <div class="d-flex justify-content-between"><span>{{ label }}</span><span>{{ n }}</span></div>
+        <div class="bc-hbar"><div style="width: {{ pct }}%"></div></div>
+      </div>
+      {% endfor %}
+      <p class="small text-muted mt-2">"In use" counts reserved and deployed units. {{ fleet.addons }} attachments and {{ fleet.skill_packs }} skill packs on offer{% if fleet.robots_unlisted %}; {{ fleet.robots_unlisted }} robot{{ fleet.robots_unlisted|pluralize }} unlisted{% endif %}.</p>
+
+      {% if fleet.issues %}
+      <div class="bc-k mb-1">Needs attention ({{ fleet.issue_count }})</div>
+      <ul class="small ps-3 mb-0">
+        {% for i in fleet.issues %}<li class="text-{{ i.level }}">{{ i.text }}</li>{% endfor %}
+      </ul>
+      {% if fleet.issue_count > 3 %}<a href="{% url 'staffpanel:robot_list' %}" class="small">See all</a>{% endif %}
+      {% else %}
+      <p class="small text-success mb-0">Catalogue checks pass: every task type has a bookable robot.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

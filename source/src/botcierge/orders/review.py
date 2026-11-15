@@ -14,6 +14,7 @@ from django.utils import timezone
 from catalog.models import FleetUnit
 from planner.decomposer import refresh_conditioning, save_customer_edit
 from planner.models import Recommendation
+from staffpanel.queue import group_by
 
 from .models import Order, OrderItem, OrderStatusEvent
 from .services import NoUnitFree, _release_unit, add_items, free_units
@@ -41,12 +42,7 @@ def day_label(d) -> str:
 
 def grouped(orders):
     """[(label, [orders])] by ship day, keeping the queue order inside each day."""
-    groups = []
-    for o in orders:
-        if not groups or groups[-1][0] != o.start_date:
-            groups.append((o.start_date, []))
-        groups[-1][1].append(o)
-    return [(day_label(d), items) for d, items in groups]
+    return group_by(orders, key=lambda o: o.start_date, label=day_label)
 
 
 def risk_flags(order) -> list[str]:

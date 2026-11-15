@@ -78,7 +78,7 @@ def ticket_list(request):
             ticket.save()
             if submitting:
                 urgent = " We've marked it urgent because the robot is with you now." if ticket.priority == "urgent" else ""
-                messages.success(request, f"Ticket #{ticket.pk} sent. We'll reply by email.{urgent}")
+                messages.success(request, f"Ticket #{ticket.pk} sent. We'll reply on this page.{urgent}")
             else:
                 messages.info(request, "Draft saved. It isn't sent until you press Submit.")
             return redirect(_support_url(order.pk))

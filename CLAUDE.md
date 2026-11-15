@@ -26,7 +26,8 @@ pip install -r ..\..\requirements.txt   # same pinned versions (scikit-learn 1.9
 python manage.py migrate                # new migrations fill in robot/skill pack task types and order review fields
 python manage.py seed_demo              # catalogue, fleet, demo/staff users (re-run is safe)
 python manage.py seed_review_orders     # 12 test orders for the A08 review queue
-python manage.py test                   # expect 89 tests OK
+python manage.py seed_support_tickets   # 7 test tickets on those orders for the A09 queue (one is a hidden customer draft)
+python manage.py test                   # expect 95 tests OK
 ```
 
 - **Fresh database:** delete `db.sqlite3` first if you want exactly the demo state. It's gitignored, so nobody else's data comes with the pull.
@@ -39,6 +40,9 @@ python manage.py test                   # expect 89 tests OK
   - Staff catalogue: `/staff/robots/`, `/fleet/`, `/addons/`, `/skill-packs/`.
   - Recommendation models page: `/staff/recommendation-models/`.
   - Review before dispatch: `/staff/review/`, logic in `orders/review.py`.
+  - Support queue: `/staff/tickets/`, logic in `support/queue.py`. Staff reply drafts live on `SupportTicket.reply_draft` (never shown to the customer).
+  - Dashboard: `/staff/`, one function per panel in `staffpanel/dashboard.py`.
+  - Both staff queues share `staffpanel/queue.py` and the `queue_list.html` / `_queue_nav.html` templates.
   - Story status is in `docs/user_stories.md`.
 
 ## Commands
@@ -50,6 +54,7 @@ pip install -r source\requirements.txt      # pinned; the joblib models need sci
 python manage.py migrate
 python manage.py seed_demo                  # catalogue, fleet, promo code, demo users (--reset to wipe catalogue first)
 python manage.py seed_review_orders         # 12 test orders (tester1-4 / testpass123) across task types and ship days for the A08 review queue (--reset to rebook)
+python manage.py seed_support_tickets       # test tickets on those orders for the A09 support queue (--reset to replace)
 python manage.py runserver
 python manage.py test                       # all tests
 python manage.py test planner               # one app

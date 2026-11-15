@@ -2,20 +2,13 @@
 {% load static %}
 {% block title %}Review order #{{ order.pk }}{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-  <a href="{% url 'staffpanel:review_list' %}?show={{ order.review_status }}" class="small">&larr; All orders</a>
-  <div class="d-flex align-items-center gap-2">
-    {% if position %}<span class="small text-muted">{{ position }} of {{ queue_size }} · {{ state_label|lower }}</span>{% endif %}
-    {% if prev_order %}<a id="prev" href="{% url 'staffpanel:review_detail' prev_order.pk %}" class="btn btn-sm bc-btn-outline" title="Previous (← key)">&larr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&larr;</span>{% endif %}
-    {% if next_order %}<a id="next" href="{% url 'staffpanel:review_detail' next_order.pk %}" class="btn btn-sm bc-btn-outline" title="Next (→ key)">&rarr;</a>{% else %}<span class="btn btn-sm bc-btn-outline disabled">&rarr;</span>{% endif %}
-  </div>
-</div>
+{% include "staffpanel/_queue_nav.html" %}
 
 <h1 class="h4 mb-1">Order #{{ order.pk }}{% if spec %} · {{ spec.get_task_category_display }}{% endif %}
   <span class="badge {% if order.review_status == 'approved' %}bc-badge{% elif order.review_status == 'rejected' %}text-bg-warning{% else %}text-bg-light border{% endif %}">{{ state_label }}</span></h1>
 <p class="text-muted mb-3">{{ order.customer.get_full_name|default:order.customer.username }} ({{ order.customer.email|default:"no email" }}) · ships {{ order.start_date|date:"D j M" }}, back {{ order.end_date|date:"j M" }} · S${{ order.total }} · {{ order.delivery_address }}</p>
 
-{% if flags %}<div class="mb-3">{% for f in flags %}<span class="badge text-bg-warning-subtle text-warning-emphasis border me-1">{{ f }}</span>{% endfor %}</div>{% endif %}
+{% include "staffpanel/_flags.html" with css="mb-3" %}
 
 <div class="row g-4">
   <div class="col-lg-7">
@@ -130,12 +123,5 @@
 </div>
 
 <script src="{% static 'js/chip_select.js' %}"></script>
-<script>
-  // ← / → move through the queue, unless the reviewer is typing
-  document.addEventListener("keydown", (e) => {
-    if (e.target.closest("input, textarea, select, [contenteditable]")) return;
-    const link = document.getElementById(e.key === "ArrowLeft" ? "prev" : e.key === "ArrowRight" ? "next" : "");
-    if (link) location.href = link.href;
-  });
-</script>
+<script src="{% static 'js/queue_keys.js' %}"></script>
 {% endblock %}

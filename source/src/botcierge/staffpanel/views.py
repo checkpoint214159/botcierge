@@ -20,21 +20,25 @@ from catalog.taxonomy import PLATFORM_CHOICES, TASK_CATEGORY_CHOICES
 from orders import review
 from orders.models import Order, OrderItem
 from orders.services import ONGOING, NoUnitFree, advance_order, assignable_units, next_status, order_summary
+from support import queue as tickets
+from support.models import SupportTicket
 from planner.ml_registry import coverage, learned_codes, model_cards
 
-from .forms import AddOnForm, FleetUnitForm, RobotModelForm, SetupOverrideForm, SkillPackForm
+from . import dashboard as dash
+from .dashboard import SERVICE_INTERVAL_DAYS
+from .queue import go_to_next, queue_nav
+from .forms import (AddOnForm, FleetUnitForm, RobotModelForm, SetupOverrideForm, SkillPackForm,
+                    TicketReplyForm, TicketStatusForm)
 
 staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url="accounts:login")
 
 
-def _todo(request, story, title):
-    return render(request, "coming_soon.html", {"story": story, "title": title, "staff": True})
-
-
 @staff_required
 def dashboard(request):
-    # TODO(A02): KPIs - bookings, revenue, fleet utilisation, ML recommendation acceptance rate.
-    return _todo(request, "A02", "Staff dashboard")
+    """A02: four panels (catalogue and fleet, business, bookings, support), built in dashboard.py."""
+    return render(request, "staffpanel/dashboard.html", {
+        "fleet": dash.fleet_panel(), "business": dash.business_panel(),
+        "bookings": dash.bookings_panel(), "support": dash.support_panel()})
 
 
 @staff_required
@@ -102,30 +106,19 @@ def review_list(request):
         o.flags = review.risk_flags(o)
     counts = {s: Order.objects.filter(status=Order.Status.CONFIRMED, review_status=s).count()
               for s, _ in REVIEW_TABS}
-    return render(request, "staffpanel/review_list.html", {
-        "groups": review.grouped(orders), "first": orders[0] if orders else None,
-        "tabs": [(s, label, counts[s]) for s, label in REVIEW_TABS], "state": state})
+    return render(request, "staffpanel/queue_list.html", {
+        "title": "Review before dispatch",
+        "intro": "Check each paid order's plan before its robot ships. Soonest ship day first; within a day, "
+                 "the biggest orders first. An order can't be dispatched until it's approved.",
+        "tabs": [(s, label, counts[s]) for s, label in REVIEW_TABS], "state": state,
+        "groups": review.grouped(orders), "row_template": "staffpanel/_review_row.html",
+        "start_url": reverse("staffpanel:review_detail", args=[orders[0].pk]) if orders else None,
+        "start_label": "Start reviewing", "highlight_state": Order.Review.PENDING})
 
 
-def _neighbours(order):
-    """Previous and next order in the same queue as this one (for the arrows)."""
-    queue = review.review_queue(order.review_status)
-    ids = [o.pk for o in queue]
-    if order.pk not in ids:
-        return None, None, ids
-    i = ids.index(order.pk)
-    return (queue[i - 1] if i > 0 else None), (queue[i + 1] if i + 1 < len(queue) else None), ids
-
-
-def _after_decision(request, order_pk, pending_ids):
-    """Go to the next order still to review, in queue order after the one just decided."""
-    left = [pk for pk in pending_ids if pk != order_pk]
-    later = pending_ids[pending_ids.index(order_pk) + 1:] if order_pk in pending_ids else []
-    nxt = next((pk for pk in later if pk in left), left[0] if left else None)
-    if nxt is None:
-        messages.success(request, "That was the last one. Nothing left to review.")
-        return redirect("staffpanel:review_list")
-    return redirect("staffpanel:review_detail", pk=nxt)
+def _next_to_review(request, order_pk, pending_ids):
+    return go_to_next(request, order_pk, pending_ids, "staffpanel:review_detail", "staffpanel:review_list",
+                      "That was the last one. Nothing left to review.")
 
 
 @staff_required
@@ -149,14 +142,14 @@ def review_detail(request, pk):
         if action == "approve":
             review.approve(order, request.user, note)
             messages.success(request, f"Order #{order.pk} approved.")
-            return _after_decision(request, order.pk, pending_ids)
+            return _next_to_review(request, order.pk, pending_ids)
         if action == "reject":
             if not note:
                 messages.error(request, "Say what needs following up, so whoever emails the customer knows.")
                 return redirect("staffpanel:review_detail", pk=order.pk)
             review.reject(order, request.user, note)
             messages.warning(request, f"Order #{order.pk} marked as needing follow-up.")
-            return _after_decision(request, order.pk, pending_ids)
+            return _next_to_review(request, order.pk, pending_ids)
         if action == "override" and override.is_valid():
             d = override.cleaned_data
             try:
@@ -167,23 +160,83 @@ def review_detail(request, pk):
                 messages.success(request, "Setup changed. Check it, then approve.")
                 return redirect("staffpanel:review_detail", pk=order.pk)
 
-    prev_order, next_order, ids = _neighbours(order)
     spec = tr.spec if tr else None
     return render(request, "staffpanel/review_detail.html", {
         "order": order, "rec": rec, "tr": tr, "spec": spec, "can_act": can_act, "override": override,
         "flags": review.risk_flags(order), "summary": order_summary(order),
         "history": tr.recommendations.select_related("robot_model", "skill_pack") if tr else [],
         "conditioning": json.dumps(rec.policy_conditioning, indent=2) if rec else "",
-        "prev_order": prev_order, "next_order": next_order,
-        "position": ids.index(order.pk) + 1 if order.pk in ids else None, "queue_size": len(ids),
+        "nav": queue_nav(review.review_queue(order.review_status), order, "staffpanel:review_detail"),
+        "back_url": reverse("staffpanel:review_list") + f"?show={order.review_status}",
         "state_label": order.get_review_status_display(),
     })
 
 
+# ---------------------------------------------------------------- A09 support queue
+
 @staff_required
 def ticket_list(request):
-    # TODO(A09): support queue.
-    return _todo(request, "A09", "Support tickets")
+    """Submitted tickets (never drafts), urgent first, then longest waiting. Same layout as A08."""
+    tab = request.GET.get("show", "open")
+    if tab not in tickets.TABS:
+        tab = "open"
+    queue = tickets.ticket_queue(tab)
+    for t in queue:
+        t.flags, t.waiting = tickets.ticket_flags(t), tickets.waiting_label(t)
+    counts = tickets.tab_counts()
+    return render(request, "staffpanel/queue_list.html", {
+        "title": "Support tickets",
+        "intro": "Tickets customers have sent (drafts stay with the customer). Urgent ones first, "
+                 "then whoever has waited longest. Replies show on the customer's support page.",
+        "tabs": [(code, label, counts[code]) for code, (label, _) in tickets.TABS.items()], "state": tab,
+        "groups": tickets.grouped(queue), "row_template": "staffpanel/_ticket_row.html",
+        "start_url": reverse("staffpanel:ticket_detail", args=[queue[0].pk]) if queue else None,
+        "start_label": "Start answering", "highlight_state": "open"})
+
+
+@staff_required
+def ticket_detail(request, pk):
+    """One ticket at a time: what the customer wrote, the conversation and their order.
+    Reply (save as draft, send, or send and resolve), or change the status and priority."""
+    ticket = get_object_or_404(SupportTicket.objects.select_related("customer", "order"), pk=pk,
+                               status__in=[s for _, (_, statuses) in tickets.TABS.items() for s in statuses])
+    to_answer = [t.pk for t in tickets.ticket_queue("open")]
+    action = request.POST.get("action", "")
+    sending = action in ("send", "send_resolve")
+    reply = TicketReplyForm(request.POST if action in ("draft", "send", "send_resolve") else None,
+                            sending=sending, initial={"body": ticket.reply_draft})
+    status_form = TicketStatusForm(request.POST if action == "status" else None, instance=ticket,
+                                   prefix="st")
+
+    if request.method == "POST":
+        if action == "draft" and reply.is_valid():
+            tickets.save_draft(ticket, reply.cleaned_data["body"])
+            messages.info(request, "Reply saved as a draft. The customer can't see it yet.")
+            return redirect("staffpanel:ticket_detail", pk=ticket.pk)
+        if sending and reply.is_valid():
+            tickets.send_reply(ticket, request.user, reply.cleaned_data["body"], resolve=action == "send_resolve")
+            messages.success(request, f"Reply sent on ticket #{ticket.pk}"
+                                      f"{' and marked resolved' if action == 'send_resolve' else ''}.")
+            return go_to_next(request, ticket.pk, to_answer, "staffpanel:ticket_detail",
+                              "staffpanel:ticket_list", "That was the last ticket waiting for an answer.")
+        if action == "status" and status_form.is_valid():
+            status_form.save()
+            messages.success(request, "Ticket updated.")
+            return redirect("staffpanel:ticket_detail", pk=ticket.pk)
+
+    order = ticket.order
+    tab = tickets.tab_of(ticket)
+    return render(request, "staffpanel/ticket_detail.html", {
+        "ticket": ticket, "order": order, "reply": reply, "status_form": status_form,
+        "conversation": ticket.messages.select_related("author"),
+        "summary": order_summary(order) if order else None,
+        "flags": tickets.ticket_flags(ticket), "waiting": tickets.waiting_label(ticket),
+        "other_tickets": (SupportTicket.objects.filter(customer=ticket.customer)
+                          .exclude(pk=ticket.pk).exclude(status=SupportTicket.Status.DRAFT)),
+        "nav": queue_nav(tickets.ticket_queue(tab), ticket, "staffpanel:ticket_detail"),
+        "back_url": reverse("staffpanel:ticket_list") + f"?show={tab}",
+        "state_label": tickets.TABS[tab][0],
+    })
 
 
 # ---------------------------------------------------------------- shared catalogue helpers
@@ -271,7 +324,6 @@ def robot_toggle(request, pk):
 
 # ---------------------------------------------------------------- A04 fleet units
 
-SERVICE_INTERVAL_DAYS = 90  # a unit not serviced for this long is flagged
 
 
 @staff_required

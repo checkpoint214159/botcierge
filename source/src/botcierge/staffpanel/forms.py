@@ -11,6 +11,7 @@ from config.form_mixins import BootstrapFormMixin
 from orders.forms import check_setup, skill_packs_for
 from orders.models import OrderItem
 from planner.decomposer import eligible_robots
+from support.models import SupportTicket
 from orders.services import ONGOING  # orders that still hold their robot (until it's collected)
 
 
@@ -212,3 +213,29 @@ class SetupOverrideForm(BootstrapFormMixin, forms.Form):
 
     def clean(self):
         return check_setup(self, super().clean())
+
+
+# ---------------------------------------------------------------- A09 support tickets
+
+class TicketReplyForm(BootstrapFormMixin, forms.Form):
+    """Staff reply. Like the customer's ticket form, a draft may be empty or half-written;
+    the text is only required when it is actually sent."""
+
+    body = forms.CharField(label="Reply to the customer", required=False, widget=forms.Textarea(attrs={
+        "rows": 6, "placeholder": "What we found, what we'll do, and by when."}))
+
+    def __init__(self, *args, sending=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["body"].required = sending
+
+
+class TicketStatusForm(BootstrapFormMixin, forms.ModelForm):
+    """Staff can move a ticket between states or change its priority. Never back to draft."""
+
+    class Meta:
+        model = SupportTicket
+        fields = ["status", "priority"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].choices = [c for c in self.fields["status"].choices if c[0] != "draft"]

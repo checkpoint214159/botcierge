@@ -25,7 +25,7 @@ class StaffFixture(TestCase):
 
 class AccessTests(StaffFixture):
     PAGES = ["robot_list", "robot_new", "fleet_list", "fleet_new", "addon_list", "addon_new",
-             "skillpack_list", "skillpack_new", "ml_models"]
+             "skillpack_list", "skillpack_new", "ml_models", "dashboard", "ticket_list", "review_list"]
 
     def test_staff_can_open_every_catalogue_page(self):
         for name in self.PAGES:
@@ -294,3 +294,106 @@ class ReviewTests(StaffFixture):
         order = self.book()
         self.client.login(username="demo", password="demopass123")
         self.assertEqual(self.client.get(reverse("staffpanel:review_detail", args=[order.pk])).status_code, 302)
+
+
+class TicketQueueTests(StaffFixture):
+    """A09: staff see submitted tickets only, urgent first, and reply with drafts like customers do."""
+
+    def setUp(self):
+        super().setUp()
+        from support.models import SupportTicket
+        self.T = SupportTicket
+        self.customer = User.objects.get(username="demo")
+
+    def ticket(self, hours=1, **kw):
+        from django.utils import timezone
+        fields = {"customer": self.customer, "subject": "Help", "description": "It stopped.",
+                  "status": "open", "submitted_at": timezone.now() - timedelta(hours=hours), **kw}
+        return self.T.objects.create(**fields)
+
+    def test_drafts_are_hidden_and_urgent_comes_first(self):
+        old = self.ticket(hours=40, subject="Old normal one")
+        urgent = self.ticket(hours=1, priority="urgent", subject="Urgent one")
+        draft = self.ticket(status="draft", submitted_at=None, subject="Secret draft")
+        resp = self.client.get(reverse("staffpanel:ticket_list"))
+        self.assertNotContains(resp, "Secret draft")
+        self.assertContains(resp, "Waiting over a day")
+        self.assertLess(resp.content.index(b"Urgent one"), resp.content.index(b"Old normal one"))
+        self.assertContains(resp, reverse("staffpanel:ticket_detail", args=[urgent.pk]))
+        # a draft can't be opened by URL either
+        self.assertEqual(self.client.get(reverse("staffpanel:ticket_detail", args=[draft.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("staffpanel:ticket_detail", args=[old.pk])).status_code, 200)
+
+    def test_draft_reply_is_kept_and_not_shown_to_customer(self):
+        t = self.ticket()
+        url = reverse("staffpanel:ticket_detail", args=[t.pk])
+        self.client.post(url, {"action": "draft", "body": "Half a thought"})
+        t.refresh_from_db()
+        self.assertEqual((t.reply_draft, t.status, t.messages.count()), ("Half a thought", "open", 0))
+        self.assertContains(self.client.get(url), "Half a thought")  # comes back in the box
+
+    def test_send_needs_text_then_moves_on_to_next(self):
+        first, second = self.ticket(hours=5), self.ticket(hours=2)
+        url = reverse("staffpanel:ticket_detail", args=[first.pk])
+        self.client.post(url, {"action": "send", "body": ""})
+        self.assertEqual(first.messages.count(), 0)
+        resp = self.client.post(url, {"action": "send", "body": "We'll swap the robot tomorrow."})
+        self.assertRedirects(resp, reverse("staffpanel:ticket_detail", args=[second.pk]))
+        first.refresh_from_db()
+        self.assertEqual((first.status, first.reply_draft, first.messages.count()), ("in_progress", "", 1))
+        resp = self.client.post(reverse("staffpanel:ticket_detail", args=[second.pk]),
+                                {"action": "send_resolve", "body": "Done."})
+        self.assertRedirects(resp, reverse("staffpanel:ticket_list"))
+        second.refresh_from_db()
+        self.assertEqual(second.status, "resolved")
+
+    def test_status_form_cannot_make_a_draft(self):
+        t = self.ticket()
+        url = reverse("staffpanel:ticket_detail", args=[t.pk])
+        self.client.post(url, {"action": "status", "st-status": "draft", "st-priority": "low"})
+        t.refresh_from_db()
+        self.assertEqual(t.status, "open")
+        self.client.post(url, {"action": "status", "st-status": "closed", "st-priority": "low"})
+        t.refresh_from_db()
+        self.assertEqual((t.status, t.priority), ("closed", "low"))
+
+    def test_customer_sees_staff_reply(self):
+        user = self.customer
+        start = date.today() + timedelta(days=3)
+        tr = TaskRequest.objects.create(
+            customer=user, description="mop my flat", area_m2=90, num_rooms=4, floor_type="tile", budget_sgd=500,
+            start_date=start, deadline_date=start + timedelta(days=1), hours_per_day=4,
+            address=Address.objects.get(customer=user))
+        order = create_order(user, decompose(tr), "1 Test Rd", None)
+        t = self.ticket(order=order)
+        self.client.post(reverse("staffpanel:ticket_detail", args=[t.pk]), {"action": "send", "body": "On it!"})
+        self.client.login(username="demo", password="demopass123")
+        resp = self.client.get(reverse("support:ticket_list"), {"order": order.pk})
+        self.assertContains(resp, "On it!")
+        self.assertContains(resp, "Botcierge support")
+
+
+class DashboardTests(StaffFixture):
+    """A02: the four panels count the right things."""
+
+    def test_panels_count_paid_bookings_and_waiting_tickets(self):
+        from support.models import SupportTicket
+        user = User.objects.get(username="demo")
+        start = date.today() + timedelta(days=1)
+        tr = TaskRequest.objects.create(
+            customer=user, description="mop my flat", area_m2=90, num_rooms=4, floor_type="tile", budget_sgd=500,
+            start_date=start, deadline_date=start + timedelta(days=1), hours_per_day=4,
+            address=Address.objects.get(customer=user))
+        order = create_order(user, decompose(tr), "1 Test Rd", None)
+        SupportTicket.objects.create(customer=user, order=order, subject="Help", status="open", priority="urgent")
+        SupportTicket.objects.create(customer=user, subject="Draft", status="draft")
+        from staffpanel import dashboard as dash
+        b, bk, sp, fl = dash.business_panel(), dash.bookings_panel(), dash.support_panel(), dash.fleet_panel()
+        self.assertEqual((b["orders"], b["revenue"]), (1, order.total))
+        self.assertEqual(sum(d["amount"] for d in b["daily"]), order.total)
+        self.assertEqual((bk["to_review"], bk["ships_tomorrow"]), (1, 1))
+        self.assertEqual((sp["to_answer"], sp["urgent"]), (1, 1))  # the draft is not counted
+        self.assertGreater(fl["utilisation"], 0)  # the order reserved a unit
+        resp = self.client.get(reverse("staffpanel:dashboard"))
+        self.assertContains(resp, "Revenue by task type")
+        self.assertContains(resp, "Answer next")
