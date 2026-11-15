@@ -20,6 +20,7 @@ from django.utils import timezone
 from PIL import Image, ImageDraw
 
 from accounts.models import Address, CustomerProfile
+from catalog.models import RobotModel
 from orders.models import Order
 from orders.services import NoUnitFree, create_order
 from planner.decomposer import decompose, eligible_robots, refresh_conditioning, requote, save_customer_edit
@@ -87,6 +88,9 @@ class Command(BaseCommand):
         parser.add_argument("--reset", action="store_true", help="delete the test customers' orders and plans first")
 
     def handle(self, *args, **opts):
+        if not RobotModel.objects.filter(is_active=True).exists():
+            self.stderr.write(self.style.ERROR("No robots in the catalogue. Run: python manage.py seed_demo"))
+            return
         users = {}
         for username, first, last, line, unit, postal in CUSTOMERS:
             u, created = User.objects.get_or_create(username=username, defaults={
@@ -117,7 +121,9 @@ class Command(BaseCommand):
                         **{"hours_per_day": 4, "num_rooms": 3, "area_m2": 80, **fields})
                     rec = decompose(tr)
                     if rec.robot_model is None:
-                        raise ValueError("no robot fits")
+                        # say why, so a missing or edited catalogue is obvious
+                        raise ValueError(f"no active robot is listed for {tr.spec.task_category} and fits "
+                                         f"this home; run seed_demo, or check /staff/robots/")
                     if extra.get("customer_edit"):
                         # the customer swapped to a pricier robot, if there is one
                         other = eligible_robots(tr).exclude(pk=rec.robot_model_id).order_by("-daily_rate").first()

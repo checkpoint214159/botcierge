@@ -5,7 +5,7 @@ Handoff spec for whoever builds the demo database, whether a person or a Claude 
 ## How to build it
 
 - Add a management command, `orders/management/commands/seed_video_demo.py`, modelled on `seed_review_orders.py`. It should go through the real code path (`decompose` -> booking details -> `create_order`, then `advance_order` / `cancel_order` for later states), not raw inserts. That way prices, status events, unit reservations and recommendations are consistent. Make it idempotent with `--reset`, and have it touch only the accounts it creates plus `demo`'s orders, plans and tickets.
-- Start from a fresh database: delete `db.sqlite3`, then run `migrate`, `seed_demo`, `seed_review_orders`, `seed_video_demo`.
+- Start from a fresh database: delete `db.sqlite3`, then run `migrate`, `seed_demo`, `seed_review_orders`, `seed_support_tickets`, `seed_video_demo`.
 - **Leave the "live" cases unseeded.** The script creates them on camera, so the seed must not create them. Check the preconditions instead (for example, that the username is free).
 - After seeding, check every case below in the browser and fix any mismatch, for example a flag that doesn't appear. The ML outputs quoted here were probed on 2026-11-15 and match the committed models.
 - Log the work in `docs/genai_log.md` and add a test that the command runs.
@@ -16,7 +16,7 @@ Handoff spec for whoever builds the demo database, whether a person or a Claude 
 |---|---|---|
 | Dana (main customer) | `demo` / `demopass123` | From `seed_demo`. Home address: Blk 123 Jurong West St 41, 640123 (West, S$29 delivery). All storefront cases below belong to Dana unless stated. |
 | Staff | `staff` / `staffpass123` | From `seed_demo`. |
-| Test customers | `tester1`-`tester4` / `testpass123` | From `seed_review_orders`. They fill the A08 queue and block units for C5d. |
+| Test customers | `tester1`-`tester4` / `testpass123` | From `seed_review_orders`. They fill the A08 queue, carry the `seed_support_tickets` tickets (A09) and block units for C5d. |
 
 ## Storefront cases
 
@@ -46,18 +46,18 @@ All of these should also appear on "My plans" (S15).
 
 **C11 (S02, S03): ratings and reviews.** Give Go2 at least 2 reviews and give three or four other robots one or two reviews each, with different ratings, so sorting by rating visibly reorders the list. Reviews need completed or collected orders, so attach them to past orders of `tester*` accounts, and of Dana for C13b.
 
-**C12 (S14): ticket with a reply.** On one of Dana's finished orders (C13b), seed a submitted ticket (status OPEN or IN_PROGRESS, priority NORMAL) and one staff `TicketMessage` reply. A09 isn't built, so write the reply directly.
+**C12 (S14, optional): older ticket with a reply.** The script now shows a reply live through A09, so this is a fallback. On C13b, seed a RESOLVED ticket with one staff `TicketMessage` reply.
 
 **C13 (S12, S13): finished orders for Dana.**
 - **C13a:** COLLECTED, Roomba floor cleaning, ended D-10, **no review yet**. Used for the live review and "Book again".
-- **C13b:** COLLECTED, ended D-20, already reviewed (4 or 5 stars). Holds C12's ticket.
+- **C13b:** COLLECTED, ended D-20, already reviewed (4 or 5 stars). Holds C12's ticket if seeded.
 - **C13c:** CANCELLED with a full refund (`cancel_order`), originally for D+3, cancelled D-5.
 
 **C14 (S18): reschedule.** CONFIRMED, approved, not dispatched, lawn care, starts D+6 for 2 days. The unit must also be free a week later, so the reschedule keeps it.
 
 **C15 (S18): cancel.** CONFIRMED, not dispatched, tidying, starts D+9.
 
-**C16 (S11, S14 fallback, S18 boundary): running order.** RUNNING, started D-1, ends D+1, with the full status event log and staff notes on each step ("Driver Ali, ETA 2pm", "Mapping done, 4 rooms"). No ticket on it. If the live C3 flow fails on camera, raise the urgent ticket here instead. Cancel and reschedule should not be offered.
+**C16 (S11, S14 fallback, S18 boundary): running order.** RUNNING, started D-1, ends D+1, with the full status event log and staff notes on each step ("Driver Ali, ETA 2pm", "Mapping done, 4 rooms"). No ticket on it. If the live C3 flow fails on camera, raise the urgent ticket here instead, then answer it in the A09 queue. Cancel and reschedule should not be offered.
 
 ## Staff cases
 
@@ -74,11 +74,17 @@ All of these should also appear on "My plans" (S15).
 - One unit in MAINTENANCE and one RETIRED, so the status counts aren't all "available".
 - At least one RESERVED unit (from orders) for the refused maintenance change.
 
+**C18 (A10): review to hide.** A 1-star review on Go2 from a `tester*` collected order, with a comment that's plainly inappropriate but safe to show on video (for example "Useless junk, the people who run this are idiots"). It must be visible before the demo, so the Go2 average visibly changes when it's hidden. It also puts something in the "2 stars or fewer" tab. Keep Go2's other reviews (C11) at 4-5 stars so the jump is obvious.
+
+**C19 (A09): customer draft that staff must not see.** Already in `seed_support_tickets`. Note on camera that it isn't in the queue.
+
+**C20 (A09): ticket with a half-written staff reply.** Already in `seed_support_tickets`: the safety ticket "Is the mop water safe around a toddler?" with a saved staff draft. The script opens it from the list. Expected "to answer" order: the seeded urgent ticket, then Dana's live urgent one (urgent first, then longest wait), then the normal tickets oldest first. Check this in the browser and adjust the narration if it differs.
+
+**A02 / A13 / A12:** no extra cases, but the seed should give them believable numbers:
+- Collected orders spread over the last 4 to 6 weeks (set `created_at` / payment dates back), so revenue per day isn't one spike on the recording day.
+- A mix of orders paid on the model's setup unchanged and on customer-edited ones (`save_customer_edit`), so "shipped as suggested" isn't 0% or 100%. Aim for 60-80%, with at least one task type clearly lower, so the per-type table has a story.
+- At least a few `source=customer` and `source=staff` rows, so the A12 CSV has more than C8's row.
+
+**A11 / A06:** no seed needed. WELCOME10's usage count comes from Dana's live checkout plus any seeded orders that used it. `alex` comes from C1. For the deactivation warning about live orders, use a `tester*` account instead.
+
 **A03 / A05:** no seed needed. Unlisting the Winbot and adding `uv_lamp` happen live. Re-run `seed_demo` after recording to undo catalogue edits, or relist the Winbot on camera.
-
-## If A02 / A13 / A09 get built before recording
-
-The data above already supports them if the seed also has:
-- Collected orders spread over the last 4 to 6 weeks, so revenue and booking charts aren't one spike (A02).
-- A mix of orders paid on the model's recommendation unchanged (`source=ml`, `is_selected`) and on customer-edited ones (`source=customer`), so the acceptance rate isn't 0% or 100% (A13).
-- Tickets in several states for the queue (A09): at least one URGENT (C3 live, or seeded on C16), two NORMAL OPEN, one RESOLVED, and one DRAFT that must **not** appear in the staff queue.

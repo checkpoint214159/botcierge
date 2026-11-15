@@ -4,7 +4,9 @@ Brief: at most 15 minutes, demo the storefront and staff-panel user stories, bot
 
 Format: **[screen]** is what's on screen or what to click. Unmarked lines are narration. Story IDs in brackets are for us, not to be read out. The data each beat needs is in `docs/video_demo_data.md`, with matching case IDs (C1, C2...).
 
-The order follows one booking from start to finish. Dana books a robot, staff check and dispatch it, then Dana tracks it, reports a problem and leaves a review. The catalogue and model pages come last, because they make the most sense once the audience has seen a full order.
+The order follows one booking from start to finish. Dana books a robot, staff check and dispatch it, then Dana tracks it, reports a problem and leaves a review. The catalogue, customer and model pages come last, because they make the most sense once the audience has seen a full order.
+
+Recording tip: keep `demo` logged in on one browser window and `staff` in a private window, so switching sides is a window change, not a log out and log in. Menu names below match the staff navbar (Dashboard, Catalogue, Bookings, Customers).
 
 ---
 
@@ -42,7 +44,7 @@ Each robot has its own page with specs (payload, battery, noise level, stair abi
 
 Signing up asks for your housing type, so later plans start with sensible defaults for your home. [S01]
 
-**[screen]** Log out. Log in as `demo`. Click the greeting in the navbar to open the profile, change household size and save.
+**[screen]** Switch to the `demo` window. Click the greeting in the navbar to open the profile, change household size and save.
 
 We'll switch to our demo customer, Dana, who already has some history. Dana can update her phone number, housing type and household size here. [S01b]
 
@@ -110,17 +112,25 @@ At checkout, Dana can apply a promo code. [S10] Payment is simulated. Paying cre
 
 **[screen]** Confirmation page, then click through to the order page. It shows Confirmed.
 
-### 4. Staff: checking the plan before the robot ships
+### 4. Staff: the dashboard and checking plans before the robot ships
 
-**[screen]** Log out. Log in as `staff`. Open `/staff/` and show the panel navigation.
+**[screen]** Switch to the `staff` window. **Dashboard** at `/staff/`. Point at the four panels in turn: Bookings, Support, Business (last 30 days), Catalogue and fleet.
 
 Now the staff side. The Django admin was off-limits, so the whole staff panel is our own, and every page checks that the user is staff.
 
-> **Not built yet (A02 dashboard, A13 acceptance rate):** if they're built before recording, show them here. Draft narration: "The dashboard shows bookings, revenue and fleet utilisation, plus how often customers accept the models' recommendation unchanged, which tells us whether the models are actually helping." Otherwise, cut this note.
+The dashboard is where the ops manager starts the day. [A02] The bookings panel shows what's waiting for review, what ships today and tomorrow, and what's out with customers. The support panel shows tickets to answer, how many are urgent and how long the oldest has waited. The business panel shows revenue and paid bookings over the last 30 days, revenue by day and by task type, refunds and the average rating. The last panel shows fleet utilisation (the share of units reserved or out on a job), units by status, units due for service and any catalogue problems.
 
-**[screen]** Click **Review**. Show the groups by ship day (Overdue, Ships today, Ships tomorrow...) and the risk flags on each row.
+**[screen]** Point at the **Recommendations shipped as suggested** tile in the Business panel.
 
-Customers pay straight away, but before a robot leaves the depot, a person checks what the models decided. [A08] The queue is grouped by ship day, soonest first, and within a day the most expensive orders come first, because more is at stake. Each row shows why it might need a closer look: the model was unsure, the customer changed the setup, the job is over budget or might not finish in time.
+This tile tells us whether the models are actually helping: the share of booked orders where neither the customer nor our review changed the robot, attachments or skill pack. [A13] We'll see the breakdown on the models page later.
+
+**[screen]** **Bookings → Review before dispatch**. Show the groups by ship day (Overdue, Ships today, Ships tomorrow...) and the risk flags on each row.
+
+Customers pay straight away, but before a robot leaves the depot, a person checks what the models decided. [A08] The queue is grouped by ship day, soonest first, and within a day the most expensive orders come first, because more is at stake. Each row shows why it might need a closer look: the model was unsure, the customer changed the setup, the robot isn't listed for that task type, or the job is over budget or might not finish in time.
+
+**[screen]** Click **Riskiest first**. The groups change to "N things to check".
+
+When staff are short on time, they can flip the queue to riskiest first. [A14] Orders with the most warnings come to the top, so the shakiest recommendations get checked while there's still time to call the customer. The arrow keys and "next" follow whichever order is chosen. Switch back to **By ship day**.
 
 **[screen]** Open the first order. Press → a few times to step through, then go to C8 (tester4's elder care order).
 
@@ -132,15 +142,15 @@ Here's a case the review exists for. This customer wants a companion for their g
 
 Staff change the setup. We save it as a staff correction and rebuild the order with an adjustment line, so the customer pays exactly what they agreed to.
 
-**[screen]** Approve it. Open C9 and choose **Needs follow-up** with a note. Show the three tabs (To review / Needs follow-up / Approved).
+**[screen]** Approve it. Open C9 and choose **Needs follow-up**. Submit with an empty note to show it's required, then add a note. Show the three tabs (To review / Needs follow-up / Approved, not dispatched).
 
-Approving tells the customer their plan was checked. If something needs the customer's input, staff flag it for follow-up with a note, which stays internal, and email the customer.
+Approving tells the customer their plan was checked. If something needs the customer's input, staff flag it for follow-up. The note is required, so whoever emails the customer knows what to ask, and it stays internal.
 
 **[screen]** Find Dana's new order (C3) in the queue, open it and point at the keep-out zones on her floor plan. Approve it.
 
-### 5. Staff: dispatching and tracking
+### 5. Staff: dispatching
 
-**[screen]** **Orders**. Filter by status. Open an order that's still "to review" (C10) and try to dispatch it. Show the refusal.
+**[screen]** **Bookings → Orders**. Filter by status. Open an order that's still "to review" (C10) and try to dispatch it. Show the refusal.
 
 The orders page is where staff run each job. [A07] An order can't be dispatched until it has been reviewed.
 
@@ -148,27 +158,35 @@ The orders page is where staff run each job. [A07] An order can't be dispatched 
 
 Staff assign a specific unit from the fleet and move the order forward one step at a time, with an optional note. Dispatching marks the unit as deployed, and collection frees it again.
 
-### 6. Back to the customer: tracking, support and reviews
+### 6. Customer and staff: tracking and support
 
-**[screen]** Log in as `demo`. Open the order.
+**[screen]** Switch to the `demo` window. Open the order.
 
 Every step staff take shows up for the customer. [S11] Dana sees a progress tracker from confirmed to collected, an update log with the staff notes, and a summary of exactly what she booked.
 
-**[screen]** Click **Get help**. The support page opens with this order selected. Type a message, save it as a draft. Then reopen it, finish the message and submit. Point at the **Urgent** priority.
+**[screen]** Click **Get help**. The support page opens with this order selected. Type a message ("The robot keeps bumping into the shoe rack by the door"), save it as a draft. Then reopen it, finish the message and submit. Point at the **Urgent** priority.
 
-If something goes wrong, Dana raises a support ticket on the order. [S14] She can save it as a draft and send it when it's ready. Because the robot is in her home right now, the ticket is marked urgent automatically. After submitting it's read-only, and replies from our team appear underneath.
+If something goes wrong, Dana raises a support ticket on the order. [S14] She can save it as a draft and send it when it's ready. Because the robot is in her home right now, the ticket is marked urgent automatically. After submitting it's read-only.
 
-**[screen]** Open C12's ticket, which already has a staff reply.
+**[screen]** Switch to `staff`. **Customers → Support tickets**. Show the tabs (to answer / in progress / resolved), the two urgent tickets at the top (Dana's and an older seeded one), and a "Waiting over a day" flag further down. Point out that C19's customer draft isn't in the list.
 
-Here's an older ticket with our team's reply.
+On the staff side, the ticket queue works like the review queue. [A09] Urgent tickets come first, then the ones that have waited longest. Tickets customers haven't sent yet never appear here.
 
-> **Not built yet (A09 ticket queue):** if built, switch to staff and show urgent tickets first, drafts hidden, and replying. Draft narration: "On the staff side, urgent tickets come first, drafts customers haven't sent are hidden, and a reply here appears on the customer's page." Otherwise, cut this note.
+**[screen]** Open Dana's ticket. Type a reply and click **Save draft**. Then finish it and click **Send reply**. The ticket moves to "in progress". Back in the list, open C20 (the ticket with a half-written staff draft), finish it and click **Send and resolve**.
+
+Staff can save a reply as a draft, which the customer can't see yet, or send it. The first reply moves the ticket to in progress, and "send and resolve" closes it in one step. Each reply records which staff member wrote it.
+
+**[screen]** Switch to `demo` and refresh the support page. Show the reply under Dana's ticket.
+
+The reply shows up on Dana's support page.
+
+### 7. Customer: order history, reviews and changes
 
 **[screen]** **My orders**. Point at in-progress orders at the top and finished ones below.
 
 Dana's order history puts orders in progress first, with collected and cancelled ones below. [S12]
 
-**[screen]** Open the collected order C13 and click **Leave a review**. Give 4 stars and a comment, then submit. Show it on the order page, then open the robot's catalogue page and show it there.
+**[screen]** Open the collected order C13a and click **Leave a review**. Give 4 stars and a comment, then submit. Show it on the order page, then open the robot's catalogue page and show it there.
 
 Once a job is finished, she can rate it. [S13] It's one review per order, and it can't be edited afterwards, so the ratings reflect what customers said at the time. The review appears on the order and on the robot's public page, and it feeds the rating sort we saw earlier.
 
@@ -180,31 +198,53 @@ Repeat chores are one click: "Book again" copies the plan and the setup she actu
 
 Plans change. Until the day before the start, and before the robot is dispatched, Dana can reschedule: same length, same price, and we keep her unit if it's free. Or she can cancel for a full refund, which frees the unit for someone else. [S18] Once the robot has left the depot, these options are gone.
 
-### 7. Staff: managing the catalogue and fleet
+### 8. Staff: managing the catalogue and fleet
 
-**[screen]** Log in as `staff`. Open **Robots**. Show the units and live orders per robot.
+**[screen]** Switch to `staff`. **Catalogue → Robots**. Show the units and live orders per robot.
 
 Staff keep the catalogue up to date. [A03] Each robot shows how many units we have and how many live orders use it.
 
-**[screen]** Edit Go2: show the task types chips and add one, then save. Then **Unlist** the Winbot. Point at the **Needs attention** panel ("No active robot is marked for window cleaning"). Show the storefront catalogue in another tab without the Winbot. Relist it.
+**[screen]** Edit Go2: show the task types chips and add one, then save. Then **Unlist** the Winbot. Point at the **Needs attention** panel ("No active robot is marked for window cleaning"). Use **View the shop** to show the catalogue without the Winbot. Relist it.
 
-Staff choose which task types each robot can be booked for, and that controls what the booking page offers. Robots are never deleted, because past orders point at them. We unlist them instead. When a change leaves a gap, like no robot left for window cleaning, the "Needs attention" panel flags it on every catalogue page.
+Staff choose which task types each robot can be booked for, and that controls what the booking page offers. Robots are never deleted, because past orders point at them. We unlist them instead. When a change leaves a gap, like no robot left for window cleaning, the "Needs attention" panel flags it on every catalogue page and on the dashboard.
 
-**[screen]** **Fleet**. Filter by status and show the counts. Point at C17's "service due" unit. Try to set a reserved unit to maintenance and show the refusal. Set a free unit to maintenance.
+**[screen]** **Catalogue → Fleet units**. Filter by status and show the counts. Point at C17's "service due" unit. Try to set a reserved unit to maintenance and show the refusal. Set a free unit to maintenance.
 
 Each physical unit is tracked with its status, depot and last service date. [A04] Units are flagged for service after 90 days. A unit that's booked can't be pulled for maintenance, because that would break a customer's order. Only orders move units into reserved or deployed.
 
-**[screen]** **Add-ons**: add "UV sterilising lamp" with code `uv_lamp`, compatible with wheeled base. **Skill packs**: open Companion Monitor and show the task types, compatible robots (chip picker) and default configuration JSON.
+**[screen]** **Catalogue → Attachments**: add "UV sterilising lamp" with code `uv_lamp`, compatible with wheeled base. **Skill packs**: open Companion Monitor and show the task types, compatible robots (chip picker) and default configuration JSON. Type broken JSON and save to show the error, then undo.
 
-Attachments and skill packs work the same way. [A05] Staff control which robots each one fits and the default configuration each skill pack starts from. This keeps recommendations to combinations we can actually deliver.
+Attachments and skill packs work the same way. [A05] Staff control which robots each one fits and the default configuration each skill pack starts from, and the form checks that configuration before saving. This keeps recommendations to combinations we can actually deliver.
 
-### 8. Staff: the recommendation models
+### 9. Staff: promotions, customer accounts and reviews
 
-**[screen]** **Recommendation models**. Scroll through the five cards, then the coverage table. Point at `uv_lamp` marked "not learned".
+**[screen]** **Bookings → Promo codes**. Point at WELCOME10's times used and discount given (Dana's checkout is in there). Click add: code `cny20`, 95%, and save to show the "Between 1% and 90%" error. Change to 20% with an end date and save. It shows as `CNY20`. Turn it off, then on.
 
-Finally, staff can see what each model decides, how it scored on held-out data, when it was trained and what it takes as input. [A15] The coverage table shows which task types, robot types, attachments and skill packs each model knows. The lamp we just added can be booked right away, but the models won't recommend it until we retrain. This page tells staff when a catalogue change needs a retrain.
+Staff run promotions here. [A11] Each code shows how often it's been used and how much discount it has given, including Dana's booking from earlier. Codes are stored in capitals and capped at 90% off. They can be switched off or given an end date, but never renamed or deleted, because past orders point at them.
 
-Together, that's the full loop: the models recommend, the customer adjusts, staff correct before dispatch, and every change is saved for the next round of training.
+**[screen]** **Customers → Accounts**. Search "Dana" and open her account: orders, tickets, reviews and addresses on one page. Go back, open `alex` (from C1) and **Deactivate**. Show the message, then reactivate.
+
+When a customer calls, staff can see their whole history on one page: bookings, spend, tickets, reviews and addresses. [A06] Staff can deactivate an account so it can't log in. Any live orders on it still go ahead, and the page warns about them. Staff accounts are never listed here.
+
+**[screen]** **Customers → Reviews**. Click the "2 stars or fewer" tab. **Hide** C18's review. Then use **View the shop** to open Go2 and show the review is gone and the average has changed. Show the "hidden" tab.
+
+Staff can hide inappropriate reviews. [A10] Hiding removes the review from the robot's page and from its average rating, and it can be shown again later.
+
+### 10. Staff: the recommendation models
+
+**[screen]** **Catalogue → Recommendation models**. Scroll through the five cards, then the coverage table. Point at `uv_lamp` marked "not learned".
+
+Staff can see what each model decides, how it scored on held-out data, when it was trained and what it takes as input. [A15] The coverage table shows which task types, robot types, attachments and skill packs each model knows. The lamp we just added can be booked right away, but the models won't recommend it until we retrain. This page tells staff when a catalogue change needs a retrain.
+
+**[screen]** Scroll to the acceptance tiles and the per-task-type table.
+
+Here's the acceptance rate from the dashboard, broken down. [A13] We split it into recommendations the customer kept, ones our review kept, and ones shipped exactly as suggested. The table lists task types lowest first, because that's where the models need better training data. The elder care order we fixed earlier counts against its task type here.
+
+**[screen]** Click **Download changes as training data (CSV)** and open the file. Point at the row for C8: the request features, what the models suggested and what staff chose.
+
+Every change customers and staff make is exported as labelled training data. [A12] Each row has the request, what the models suggested and what was actually chosen, which gives us corrected labels for the robot, attachment and skill pack models. We add it to the training set by hand and retrain.
+
+That's the full loop: the models recommend, the customer adjusts, staff correct before dispatch, we measure how often the models were right, and every correction becomes training data for the next round.
 
 ## [outro]
 
@@ -214,18 +254,17 @@ Together, that's the full loop: the models recommend, the customer adjusts, staf
 
 ## Coverage check
 
-| Story | Section | Status on main (2026-11-15) |
-|---|---|---|
-| S01, S01b, S19 | 1 | done |
-| S02, S03 | 1 | done |
-| S04, S05, S06, S07, S16, S17, S15 | 2 | done |
-| S08, S09, S10, S20 | 3 | done |
-| A08 | 4 | done |
-| A07 | 5 | done |
-| S11, S14, S12, S13, S18 | 6 | done |
-| A03, A04, A05 | 7 | done |
-| A15 | 8 | done |
-| A02, A13 | 4 (placeholder) | stub / todo: build or cut |
-| A09 | 6 (placeholder) | stub: build or cut. S14 replies need seeded `TicketMessage` rows until then |
-| A14 | not scripted | todo: if built, show the A08 list sorted by risk in section 4 |
-| A06, A10, A11, A12 | not scripted | stretch |
+All stories are done on `main` as of 2026-11-15.
+
+| Story | Section |
+|---|---|
+| S01, S01b, S19, S02, S03 | 1 |
+| S04, S05, S06, S07, S16, S17, S15 | 2 |
+| S08, S09, S10, S19 (zone pricing), S20 | 3 |
+| A02, A13 (tile), A08, A14 | 4 |
+| A07 | 5 |
+| S11, S14, A09 | 6 |
+| S12, S13, S18 | 7 |
+| A03, A04, A05 | 8 |
+| A11, A06, A10 | 9 |
+| A15, A13 (breakdown), A12 | 10 |
